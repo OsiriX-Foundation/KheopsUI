@@ -114,11 +114,11 @@ import { mapGetters } from 'vuex'
 export default {
 	name: 'SeriesSummary',
 	props: {
-		seriesInstanceUID: {
+		SeriesInstanceUID: {
 			type: String,
 			required: true
 		},
-		studyInstanceUID: {
+		StudyInstanceUID: {
 			type: String,
 			required: true
 		},
@@ -158,22 +158,21 @@ export default {
 					}
 				}
 			}
-
 		}
 	},
 	methods: {
 		toggleChecked () {
 			this.isSelected = !this.isSelected
 		},
-
 		previewImg () {
-			if (this.series.Modality === 'SR') this.series.imgSrc = 'static/img/SR_2.png'
-			if (this.series.imgSrc !== undefined && this.series.imgSrc !== '') return this.series.imgSrc
-			else {
-				return this.$store.dispatch('getImage', { SeriesInstanceUID: this.SeriesInstanceUID, StudyInstanceUID: this.StudyInstanceUID }).then(img => {
-					this.series.imgSrc = img
-					return img
-				})
+			// if (this.series.Modality === 'SR') {
+			//    this.series.imgSrc = 'static/img/SR_2.png'
+			// }
+
+			if (this.series.imgSrc) {
+				return this.series.imgSrc
+			} else if (this.SeriesInstanceUID && this.StudyInstanceUID) {
+				this.$store.dispatch('getImage', { SeriesInstanceUID: this.SeriesInstanceUID, StudyInstanceUID: this.StudyInstanceUID })
 			}
 		},
 		openViewer () {
