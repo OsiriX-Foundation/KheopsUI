@@ -114,11 +114,11 @@ import { mapGetters } from 'vuex'
 export default {
 	name: 'SeriesSummary',
 	props: {
-		SeriesInstanceUID: {
+		seriesInstanceUID: {
 			type: String,
 			required: true
 		},
-		StudyInstanceUID: {
+		studyInstanceUID: {
 			type: String,
 			required: true
 		},
@@ -136,9 +136,9 @@ export default {
 			user: 'currentUser'
 		}),
 		series () {
-			let studyIndex = _.findIndex(this.studies, s => { return s.StudyInstanceUID[0] === this.StudyInstanceUID })
+			let studyIndex = _.findIndex(this.studies, s => { return s.StudyInstanceUID[0] === this.studyInstanceUID })
 			if (studyIndex > -1) {
-				let seriesIndex = _.findIndex(this.studies[studyIndex].series, d => { return d.SeriesInstanceUID[0] === this.SeriesInstanceUID })
+				let seriesIndex = _.findIndex(this.studies[studyIndex].series, d => { return d.SeriesInstanceUID[0] === this.seriesInstanceUID })
 				if (seriesIndex > -1) return this.studies[studyIndex].series[seriesIndex]
 			}
 			return {}
@@ -150,9 +150,9 @@ export default {
 			},
 			// setter
 			set: function (newValue) {
-				let studyIndex = _.findIndex(this.studies, s => { return s.StudyInstanceUID[0] === this.StudyInstanceUID })
+				let studyIndex = _.findIndex(this.studies, s => { return s.StudyInstanceUID[0] === this.studyInstanceUID })
 				if (studyIndex > -1) {
-					let seriesIndex = _.findIndex(this.studies[studyIndex].series, d => { return d.SeriesInstanceUID[0] === this.SeriesInstanceUID })
+					let seriesIndex = _.findIndex(this.studies[studyIndex].series, d => { return d.SeriesInstanceUID[0] === this.seriesInstanceUID })
 					if (seriesIndex > -1) {
 						this.$store.dispatch('toggleSelected', { type: 'series', index: studyIndex + ':' + seriesIndex, selected: newValue })
 					}
@@ -165,18 +165,10 @@ export default {
 			this.isSelected = !this.isSelected
 		},
 		previewImg () {
-			// if (this.series.Modality === 'SR') {
-			//    this.series.imgSrc = 'static/img/SR_2.png'
-			// }
-
-			if (this.series.imgSrc) {
-				return this.series.imgSrc
-			} else if (this.SeriesInstanceUID && this.StudyInstanceUID) {
-				this.$store.dispatch('getImage', { SeriesInstanceUID: this.SeriesInstanceUID, StudyInstanceUID: this.StudyInstanceUID })
-			}
+			return this.series.imgSrc
 		},
 		openViewer () {
-			let url = `${process.env.VUE_APP_URL_API}/studies/${this.StudyInstanceUID}/ohifmetadata?firstseries=${this.SeriesInstanceUID}`
+			let url = `${process.env.VUE_APP_URL_API}/studies/${this.studyInstanceUID}/ohifmetadata?firstseries=${this.seriesInstanceUID}`
 			window.open(`${process.env.VUE_APP_URL_VIEWER}/?url=${encodeURIComponent(url)}#token=${this.user.jwt}`, 'OHIFViewer')
 		}
 	}

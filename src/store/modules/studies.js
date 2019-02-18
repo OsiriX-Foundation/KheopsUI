@@ -153,9 +153,16 @@ const actions = {
 								}
 								commit('SET_FLAG', flag)
 							}
-							dispatch('getImage', { StudyInstanceUID: study.StudyInstanceUID[0], SeriesInstanceUID: t.SeriesInstanceUID[0] })
 						}
 					})
+					if (t.Modality && t.Modality.includes('SR')) {
+						t.imgSrc = 'static/img/SR_2.png'
+					} else {
+						dispatch('getImage', {
+							StudyInstanceUID: study.StudyInstanceUID[0],
+							SeriesInstanceUID: t.SeriesInstanceUID[0]
+						})
+					}
 					if (t.SeriesInstanceUID !== undefined) data.push(t)
 				})
 				commit('SET_SERIES', { StudyInstanceUID: params.StudyInstanceUID, series: data })
@@ -383,9 +390,9 @@ const mutations = {
 		state.request = request
 	},
 	SET_IMAGE (state, params) {
-		let idx = _.findIndex(state.all, s => { return s.StudyInstanceUID === params.StudyInstanceUID })
+		let idx = _.findIndex(state.all, s => { return s.StudyInstanceUID[0] === params.StudyInstanceUID })
 		if (idx > -1) {
-			let sidx = _.findIndex(state.all[idx].series, s => { return s.SeriesInstanceUID === params.SeriesInstanceUID })
+			let sidx = _.findIndex(state.all[idx].series, s => { return s.SeriesInstanceUID[0] === params.SeriesInstanceUID })
 			if (sidx > -1) state.all[idx].series[sidx].imgSrc = params.img
 		}
 	},
