@@ -209,6 +209,7 @@ export default {
     ...mapGetters({
       album: 'album',
       albumTokens: 'albumTokens',
+      validParamsToken: 'validParamsToken',
     }),
     currentSettings() {
       return this.$route.params.category;
@@ -278,7 +279,7 @@ export default {
   methods: {
     getTokens() {
       const queries = {
-        valid: true,
+        valid: this.validParamsToken,
         album: this.albumID,
       };
       return this.$store.dispatch('getAlbumTokens', { queries });
@@ -306,11 +307,12 @@ export default {
     createTwitterToken(albumID) {
       this.twitterTokenParams.album = albumID;
       this.twitterTokenParams.expiration_time = moment().add(100, 'Y').format();
+      let twitterWindow = window.open('', 'twitter');
       this.createToken(this.twitterTokenParams).then((res) => {
         const urlTwitter = 'https://twitter.com/intent/tweet';
         const urlSharing = `I want to show you my study album ! Click on this link ${process.env.VUE_APP_URL_ROOT}/view/${res.data.access_token} #Kheops`;
         const queries = `?text=${encodeURIComponent(urlSharing)}`;
-        window.open(urlTwitter + queries, '_blank');
+        twitterWindow.location.href = urlTwitter + queries
       }).catch(() => {
         this.$snotify.error(this.$t('sorryerror'));
       });
