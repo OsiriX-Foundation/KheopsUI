@@ -16,14 +16,15 @@ import VeeValidate from 'vee-validate';
 import VueKeyCloak from '@dsb-norge/vue-keycloak-js';
 import '@/filters/filters.js';
 import VueI18n from 'vue-i18n';
+import VueSidebarMenu from 'vue-sidebar-menu';
 import store from './store';
 import Access from '@/directives/access';
 import router from './router';
 import App from './App';
 import messages from '@/lang/messages';
 
-import VueSidebarMenu from 'vue-sidebar-menu';
 import 'vue-sidebar-menu/dist/vue-sidebar-menu.css';
+
 Vue.use(VueSidebarMenu);
 
 Vue.config.productionTip = false;

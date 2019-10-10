@@ -29,7 +29,6 @@
         v-if="logged"
       />
       -->
-
       <!-- content -->
       <router-view
         :style="logged ? 'margin: 25px auto' : 'margin: 75px auto'"
@@ -60,7 +59,29 @@
       :show-one-child="props.showOneChild"
       @toggle-collapse="onToggleCollapse"
       @item-click="onItemClick"
-    />
+    >
+      <div slot="header"></div>
+      <div slot="footer">
+        <div
+          v-if="!collapsed"
+          class="p-2"
+        >
+          © KHEOPS, inc 2019
+        </div>
+      </div>
+      <span slot="toggle-icon">
+        <v-icon
+          class="align-middle"
+          :name="collapsed ? 'chevron-right' : 'chevron-left'"
+        />
+      </span>
+      <span slot="dropdown-icon">
+        <v-icon
+          class="align-middle"
+          :name="'chevron-right'"
+        />
+      </span>
+    </sidebar-menu>
   </div>
 </template>
 
@@ -73,8 +94,8 @@ import SendStudies from '@/components/study/SendStudies';
 import store from '@/store';
 
 const separator = {
-  template: `<hr style="border-color: rgba(0, 0, 0, 255); margin: 20px;">`
-}
+  template: '<hr style="border-color: rgba(0, 0, 0, 255); margin: 20px;">',
+};
 
 export default {
   name: 'App',
@@ -85,13 +106,13 @@ export default {
       props: {
         showChild: false,
         showOneChild: true,
-        width: '200px'
+        width: '200px',
       },
       redirect: {
         Help: {
           href: 'https://docs.kheops.online/',
-          name: '_blank'
-        }
+          name: '_blank',
+        },
       },
       menu: [
         {
@@ -106,41 +127,41 @@ export default {
             element: 'span',
             class: '',
             // attributes: {}
-            // text: ''
-          }
+            text: '',
+          },
         },
         {
           title: 'Albums',
           icon: 'fa fa-chart-area',
-          child: []
+          child: [],
         },
         {
-          component: separator
+          component: separator,
         },
         {
           href: '/user',
           title: 'User settings',
-          icon: 'fa fa-user'
+          icon: 'fa fa-user',
         },
         {
           title: 'Help',
-          icon: 'fa fa-user'
+          icon: 'fa fa-user',
         },
         {
           title: 'Logout',
-          icon: 'fa fa-user'
+          icon: 'fa fa-user',
         },
         {
           title: 'Langage',
           icon: 'fa fa-user',
           child: [
-              {
-                  title: 'ENG'
-              },
-              {
-                  title: 'FR'
-              }
-          ]
+            {
+              title: 'ENG',
+            },
+            {
+              title: 'FR',
+            },
+          ],
         },
       ],
       collapsed: false,
@@ -169,54 +190,51 @@ export default {
   },
   created() {
     document.title = 'Kheops';
-    this.setAlbumsMenu()
+    this.setAlbumsMenu();
   },
   methods: {
     getIndexAlbumsMenu() {
-      const index = this.menu.findIndex((menu) => {
-        return menu.title === 'Albums';
-      })
+      const index = this.menu.findIndex((menu) => menu.title === 'Albums');
       return index;
     },
     initMenuChildAlbums(index) {
-      this.menu[index].child = []
+      this.menu[index].child = [];
     },
     addCreateAlbum(index) {
       if (this.albums.length > 0) {
         this.menu[index].child.push({
-          component: separator
-        })
+          component: separator,
+        });
       }
       this.menu[index].child.push({
         title: 'Create an album',
-        href: '/albums/new'
-      })
-
+        href: '/albums/new',
+      });
     },
     setAlbumsMenu() {
       const index = this.getIndexAlbumsMenu();
       this.initMenuChildAlbums(index);
-      this.albums.forEach(album => {
+      this.albums.forEach((album) => {
         this.menu[index].child.push({
           title: album.name,
-          href: `/albums/${album.album_id}`
-        })
-      })
-      this.addCreateAlbum(index)
+          href: `/albums/${album.album_id}`,
+        });
+      });
+      this.addCreateAlbum(index);
     },
-    onToggleCollapse (collapsed) {
-      console.log(collapsed)
-      this.collapsed = collapsed
+    onToggleCollapse(collapsed) {
+      console.log(collapsed);
+      this.collapsed = collapsed;
     },
-    onItemClick (event, item) {
+    onItemClick(event, item) {
       if (this.redirect[item.title] !== undefined) {
-        window.open(this.redirect[item.title].href, this.redirect[item.title].name)
+        window.open(this.redirect[item.title].href, this.redirect[item.title].name);
       }
       if (item.title === 'Login') {
-        this.login()
+        this.login();
       }
       if (item.title === 'Logout') {
-        this.logout()
+        this.logout();
       }
     },
     logout() {
