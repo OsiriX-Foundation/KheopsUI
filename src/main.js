@@ -22,6 +22,10 @@ import router from './router';
 import App from './App';
 import messages from '@/lang/messages';
 
+import VueSidebarMenu from 'vue-sidebar-menu';
+import 'vue-sidebar-menu/dist/vue-sidebar-menu.css';
+Vue.use(VueSidebarMenu);
+
 Vue.config.productionTip = false;
 Vue.config.performance = true;
 

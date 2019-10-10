@@ -15,45 +15,66 @@
 }
 </i18n>
 <template>
-  <div id="app">
-    <vue-snotify />
-    <nav-header
-      :logged="logged"
-    />
-    <nav-bar
-      v-if="logged"
-    />
+  <div
+    id="app"
+    :class="[{'collapsed' : collapsed}]"
+  >
+    <div>
+      <vue-snotify />
+      <!--
+      <nav-header
+        :logged="logged"
+      />
+      <nav-bar
+        v-if="logged"
+      />
+      -->
 
-    <!-- content -->
-    <router-view
-      :style="logged ? 'margin: 25px auto' : 'margin: 75px auto'"
-    />
+      <!-- content -->
+      <router-view
+        :style="logged ? 'margin: 25px auto' : 'margin: 75px auto'"
+      />
 
-    <send-studies />
-    <!-- footer -->
-    <footer>
-      <b-navbar
-        toggleable="md"
-        type="info"
-        navbar-dark
-        bg-primary
-      >
-        <b-navbar-brand
-          href="#"
-          tag="h4"
+      <send-studies />
+      <!-- footer -->
+      <footer>
+        <b-navbar
+          toggleable="md"
+          type="info"
+          navbar-dark
+          bg-primary
         >
-          © KHEOPS, inc {{ year }}
-        </b-navbar-brand>
-      </b-navbar>
-    </footer>
+          <b-navbar-brand
+            href="#"
+            tag="h4"
+          >
+            © KHEOPS, inc {{ year }}
+          </b-navbar-brand>
+        </b-navbar>
+      </footer>
+    </div>
+    <sidebar-menu
+      :menu="menu"
+      :width="props.width"
+      :show-child="props.showChild"
+      :show-one-child="props.showOneChild"
+      @toggle-collapse="onToggleCollapse"
+      @item-click="onItemClick"
+    />
   </div>
 </template>
 
 <script>
-
+import Vue from 'vue';
+import { mapGetters } from 'vuex';
 import navHeader from '@/components/navheader';
 import navBar from '@/components/navbar';
 import SendStudies from '@/components/study/SendStudies';
+import store from '@/store';
+
+const separator = {
+  template: `<hr style="border-color: rgba(0, 0, 0, 255); margin: 20px;">`
+}
 
 export default {
   name: 'App',
@@ -61,9 +82,74 @@ export default {
   data() {
     return {
       appTitle: 'Kheops',
+      props: {
+        showChild: false,
+        showOneChild: true,
+        width: '200px'
+      },
+      redirect: {
+        Help: {
+          href: 'https://docs.kheops.online/',
+          name: '_blank'
+        }
+      },
+      menu: [
+        {
+          header: true,
+          title: 'Kheops',
+          hiddenOnCollapse: true,
+        },
+        {
+          href: { path: '/' },
+          title: 'Inbox',
+          icon: {
+            element: 'span',
+            class: '',
+            // attributes: {}
+            // text: ''
+          }
+        },
+        {
+          title: 'Albums',
+          icon: 'fa fa-chart-area',
+          child: []
+        },
+        {
+          component: separator
+        },
+        {
+          href: '/user',
+          title: 'User settings',
+          icon: 'fa fa-user'
+        },
+        {
+          title: 'Help',
+          icon: 'fa fa-user'
+        },
+        {
+          title: 'Logout',
+          icon: 'fa fa-user'
+        },
+        {
+          title: 'Langage',
+          icon: 'fa fa-user',
+          child: [
+              {
+                  title: 'ENG'
+              },
+              {
+                  title: 'FR'
+              }
+          ]
+        },
+      ],
+      collapsed: false,
     };
   },
   computed: {
+    ...mapGetters({
+      albums: 'albums',
+    }),
     year() {
       return new Date().getFullYear();
     },
@@ -75,15 +161,78 @@ export default {
     $route(to) {
       document.title = this.$t(to.meta.title) || this.appTitle;
     },
+    albums: {
+      handler() {
+        this.setAlbumsMenu();
+      },
+    },
   },
   created() {
     document.title = 'Kheops';
+    this.setAlbumsMenu()
+  },
+  methods: {
+    getIndexAlbumsMenu() {
+      const index = this.menu.findIndex((menu) => {
+        return menu.title === 'Albums';
+      })
+      return index;
+    },
+    initMenuChildAlbums(index) {
+      this.menu[index].child = []
+    },
+    addCreateAlbum(index) {
+      if (this.albums.length > 0) {
+        this.menu[index].child.push({
+          component: separator
+        })
+      }
+      this.menu[index].child.push({
+        title: 'Create an album',
+        href: '/albums/new'
+      })
+
+    },
+    setAlbumsMenu() {
+      const index = this.getIndexAlbumsMenu();
+      this.initMenuChildAlbums(index);
+      this.albums.forEach(album => {
+        this.menu[index].child.push({
+          title: album.name,
+          href: `/albums/${album.album_id}`
+        })
+      })
+      this.addCreateAlbum(index)
+    },
+    onToggleCollapse (collapsed) {
+      console.log(collapsed)
+      this.collapsed = collapsed
+    },
+    onItemClick (event, item) {
+      if (this.redirect[item.title] !== undefined) {
+        window.open(this.redirect[item.title].href, this.redirect[item.title].name)
+      }
+      if (item.title === 'Login') {
+        this.login()
+      }
+      if (item.title === 'Logout') {
+        this.logout()
+      }
+    },
+    logout() {
+      store.dispatch('logout').then(() => {
+        Vue.prototype.$keycloak.logoutFn();
+      });
+    },
+    login() {
+      Vue.prototype.$keycloak.loginFn();
+    },
   },
 };
 </script>
 
 <style>
-
+@import url('https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,600');
 .pointer{
   cursor:pointer;
 }
@@ -101,6 +250,12 @@ a.navbar-brand {
 }
 body {
   overflow-y: scroll;
+}
+#app {
+  padding-left: 205px;
+}
+#app.collapsed {
+  padding-left: 55px;
 }
 </style>
 
