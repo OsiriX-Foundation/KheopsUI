@@ -32,6 +32,7 @@
     "vue-markdown": "^2.2.4",
     "vue-multiselect": "^2.1.6",
     "vue-router": "^3.0.6",
+    "vue-sidebar-menu": "^4.2.3",
     "vue-snotify": "^3.2.1",
     "vue-spinner": "^1.0.3",
     "vue-upload-component": "^2.8.20",
