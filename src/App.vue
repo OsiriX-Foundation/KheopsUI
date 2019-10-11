@@ -61,8 +61,14 @@
       @item-click="onItemClick"
     >
       <div slot="header">
-        <a href="/" class="vsm--link vsm--link_level-1">
-          <font-awesome-icon icon="user-cog" class=" vsm--icon svg-inline--fa fa-user-cog fa-w-20" />
+        <a
+          href="/"
+          class="vsm--link vsm--link_level-1"
+        >
+          <font-awesome-icon
+            icon="user-cog"
+            class=" vsm--icon svg-inline--fa fa-user-cog fa-w-20"
+          />
           <span
             v-if="!collapsed"
             class="vsm--title"
@@ -137,8 +143,8 @@ export default {
           icon: {
             element: 'font-awesome-icon',
             attributes: {
-              icon: "bars",
-              size: "sm",
+              icon: 'bars',
+              size: 'sm',
             },
           },
         },
@@ -148,7 +154,7 @@ export default {
           icon: {
             element: 'font-awesome-icon',
             attributes: {
-              icon: "book"
+              icon: 'book',
             },
           },
         },
@@ -163,7 +169,7 @@ export default {
           icon: {
             element: 'font-awesome-icon',
             attributes: {
-              icon: "user-cog"
+              icon: 'user-cog',
             },
           },
         },
@@ -172,7 +178,7 @@ export default {
           icon: {
             element: 'font-awesome-icon',
             attributes: {
-              icon: "question-circle"
+              icon: 'question-circle',
             },
           },
         },
@@ -181,7 +187,7 @@ export default {
           icon: {
             element: 'font-awesome-icon',
             attributes: {
-              icon: "sign-out-alt"
+              icon: 'sign-out-alt',
             },
           },
         },
@@ -190,7 +196,7 @@ export default {
           icon: {
             element: 'font-awesome-icon',
             attributes: {
-              icon: "language"
+              icon: 'language',
             },
           },
           child: [

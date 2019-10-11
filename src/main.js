@@ -25,13 +25,15 @@ import messages from '@/lang/messages';
 
 import 'vue-sidebar-menu/dist/vue-sidebar-menu.css';
 import '@/css/custom_sidebar_menu.css';
-import { library } from '@fortawesome/fontawesome-svg-core'
-import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
-import { faBook, faBars, faQuestionCircle, faUserCog, faSignOutAlt, faLanguage } from '@fortawesome/free-solid-svg-icons'
+import { library } from '@fortawesome/fontawesome-svg-core';
+import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
+import {
+  faBook, faBars, faQuestionCircle, faUserCog, faSignOutAlt, faLanguage,
+} from '@fortawesome/free-solid-svg-icons';
 
-library.add(faBook, faBars, faQuestionCircle, faUserCog, faSignOutAlt, faLanguage)
+library.add(faBook, faBars, faQuestionCircle, faUserCog, faSignOutAlt, faLanguage);
 
-Vue.component('font-awesome-icon', FontAwesomeIcon)
+Vue.component('font-awesome-icon', FontAwesomeIcon);
 Vue.use(VueSidebarMenu);
 
 Vue.config.productionTip = false;
