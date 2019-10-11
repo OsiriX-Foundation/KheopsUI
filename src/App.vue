@@ -60,7 +60,17 @@
       @toggle-collapse="onToggleCollapse"
       @item-click="onItemClick"
     >
-      <div slot="header"></div>
+      <div slot="header">
+        <a href="/" class="vsm--link vsm--link_level-1">
+          <font-awesome-icon icon="user-cog" class=" vsm--icon svg-inline--fa fa-user-cog fa-w-20" />
+          <span
+            v-if="!collapsed"
+            class="vsm--title"
+          >
+            KHEOPS
+          </span>
+        </a>
+      </div>
       <div slot="footer">
         <div
           v-if="!collapsed"
@@ -97,6 +107,7 @@ const separator = {
   template: '<hr style="border-color: rgba(0, 0, 0, 255); margin: 20px;">',
 };
 
+
 export default {
   name: 'App',
   components: { navHeader, navBar, SendStudies },
@@ -124,36 +135,64 @@ export default {
           href: { path: '/' },
           title: 'Inbox',
           icon: {
-            element: 'span',
-            class: '',
-            // attributes: {}
-            text: '',
+            element: 'font-awesome-icon',
+            attributes: {
+              icon: "bars",
+              size: "sm",
+            },
           },
         },
         {
           title: 'Albums',
-          icon: 'fa fa-chart-area',
           child: [],
+          icon: {
+            element: 'font-awesome-icon',
+            attributes: {
+              icon: "book"
+            },
+          },
         },
         {
           component: separator,
+          hidden: false,
+          hiddenOnCollapse: true,
         },
         {
           href: '/user',
           title: 'User settings',
-          icon: 'fa fa-user',
+          icon: {
+            element: 'font-awesome-icon',
+            attributes: {
+              icon: "user-cog"
+            },
+          },
         },
         {
           title: 'Help',
-          icon: 'fa fa-user',
+          icon: {
+            element: 'font-awesome-icon',
+            attributes: {
+              icon: "question-circle"
+            },
+          },
         },
         {
           title: 'Logout',
-          icon: 'fa fa-user',
+          icon: {
+            element: 'font-awesome-icon',
+            attributes: {
+              icon: "sign-out-alt"
+            },
+          },
         },
         {
           title: 'Langage',
-          icon: 'fa fa-user',
+          icon: {
+            element: 'font-awesome-icon',
+            attributes: {
+              icon: "language"
+            },
+          },
           child: [
             {
               title: 'ENG',
