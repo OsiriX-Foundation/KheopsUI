@@ -51,11 +51,12 @@
         class="btn btn-secondary"
         @click="form_add_user=true"
       >
+        {{ $t('add_user') }}
         <v-icon
           name="user-plus"
           scale="1"
-          class="mr-2"
-        />{{ $t('add_user') }}
+          class="ml-2"
+        />
       </button>
     </h3>
     <div

@@ -13,6 +13,33 @@ footer {
   bottom: 0;
 }
 
+button.kheops-btn {
+	border: 1px solid white;
+	max-width: 350px;
+	text-align: left;
+	color: white;
+	padding: 1px 0.75rem;
+	cursor: pointer;
+	overflow: hidden;
+	border-radius: 0.25rem;
+	background-color: Transparent;
+	padding: 0.2rem 0.75rem;
+}
+button.kheops-btn:hover {
+	border: 1px solid #FFFFFF;
+	color: #FFFFFF;
+}
+
+.kheops-btn-warning {
+	border: 1px solid #fc4848 !important;
+	color: #fc4848 !important;
+}
+
+.kheops-btn-warning:hover {
+	border: 1px solid #dd3d3d !important;
+	color: #dd3d3d !important;
+}
+
 .link, .pointer{
 	cursor: pointer;
 }

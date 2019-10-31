@@ -140,6 +140,31 @@ Props :
               v-if="confirmDelete !== user.user_name && confirmResetAdmin !== user.user_name"
               class="user_actions"
             >
+              <kheops-button
+                @click="toggleAdmin(user)"
+              >
+                <template slot="content">
+                  <span>
+                    <span>
+                    {{ $t('changerole') }} {{ (user.is_admin)?$t('user'):$t("admin") }}
+                    </span>
+                    <span>
+                      <v-icon
+                        name="user"
+                      />
+                    </span>
+                  </span>
+                </template>
+              </kheops-button>
+              <kheops-button
+                custom-class="kheops-btn-warning mt-2"
+                @click="deleteUser(user)"
+              >
+                <template slot="content">
+                  {{ $t('remove') }}
+                  <v-icon name="trash" />
+                </template>
+              </kheops-button>
               <a
                 v-if="showChangeRole"
                 @click.stop="toggleAdmin(user)"
@@ -210,10 +235,12 @@ Props :
 <script>
 import mobiledetect from '@/mixins/mobiledetect.js';
 import { CurrentUser } from '@/mixins/currentuser.js';
+import KheopsButton from '@/components/globals/KheopsButton';
 
 export default {
   name: 'AlbumUsers',
   mixins: [CurrentUser],
+  components: { KheopsButton },
   props: {
     album: {
       type: Object,
