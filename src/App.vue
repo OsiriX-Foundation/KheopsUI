@@ -50,25 +50,16 @@
           href="/"
           class="vsm--link vsm--link_level-1"
         >
-          <font-awesome-icon
-            icon="user-cog"
-            class=" vsm--icon svg-inline--fa fa-user-cog fa-w-20"
+          <kheops-pyramid
+            width="11.04264mm"
+            height="6.670755mm"
           />
           <span
             v-if="!collapsed"
-            class="vsm--title"
           >
             KHEOPS
           </span>
         </a>
-      </div>
-      <div slot="footer">
-        <div
-          v-if="!collapsed"
-          class="p-2"
-        >
-          © KHEOPS, inc 2019
-        </div>
       </div>
       <span slot="toggle-icon">
         <v-icon
@@ -95,6 +86,8 @@ import navHeader from '@/components/navheader';
 import navBar from '@/components/navbar';
 import SendStudies from '@/components/study/SendStudies';
 import store from '@/store';
+import KheopsPyramid from '@/components/kheopsSVG/KheopsPyramid.vue';
+import KheopsFont from '@/components/kheopsSVG/KheopsFont.vue';
 
 const separator = {
   template: '<hr style="border-color: rgba(0, 0, 0, 255); margin: 20px;">',
@@ -103,7 +96,7 @@ const separator = {
 
 export default {
   name: 'App',
-  components: { navHeader, navBar, SendStudies },
+  components: { navHeader, navBar, SendStudies, KheopsPyramid, KheopsFont },
   data() {
     return {
       appTitle: 'Kheops',
@@ -119,11 +112,6 @@ export default {
         },
       },
       menu: [
-        {
-          header: true,
-          title: 'Kheops',
-          hiddenOnCollapse: true,
-        },
         {
           href: { path: '/' },
           title: 'Inbox',
