@@ -9,7 +9,7 @@
     "cancel": "Cancel",
     "addfavorites": "Add too favorites",
     "addfavorites": "Remove too favorites",
-    "confirmDelete": "Are you sure you want to delete {countStudies} study containing {countSeries} serie? Once deleted, you will not be able to re-upload any series if other users still have access to them. | Are you sure you want to delete {countStudies} studies containing {countSeries} series? Once deleted, you will not be able to re-upload any series if other users still have access to them.",
+    "confirmDelete": "Are you sure you want to delete {countSeries} series within {countStudies} studies ? Once deleted, you will not be able to re-upload any series if other users still have access to them. | Are you sure you want to delete {countSeries} series within {countStudies} studies ? Once deleted, you will not be able to re-upload any series if other users still have access to them.",
     "importdir": "Import directory",
     "importfiles": "Import files",
     "draganddrop": "Or drag and drop",
@@ -62,10 +62,9 @@
               <v-icon
                 class="align-middle"
                 name="paper-plane"
-                color="white"
               />
             </span><br>
-            <span style="color: white">{{ $t("send") }}</span>
+            <span>{{ $t("send") }}</span>
           </button>
         </div>
         <!--
@@ -83,17 +82,16 @@
               <v-icon
                 class="align-middle"
                 name="book"
-                color="white"
               />
             </span><br>
-            <span style="color: white">{{ $t("addalbum") }}</span>
+            <span>{{ $t("addalbum") }}</span>
           </template>
           <b-dropdown-item
             v-for="allowedAlbum in allowedAlbums"
             :key="allowedAlbum.id"
             @click.stop="addToAlbum(allowedAlbum.album_id)"
           >
-            {{ allowedAlbum.name }}
+            {{ allowedAlbum.name|maxTextLength(albumNameMaxLength) }}
           </b-dropdown-item>
           <b-dropdown-divider />
           <b-dropdown-item
@@ -117,10 +115,9 @@
               <v-icon
                 class="align-middle"
                 name="bars"
-                color="white"
               />
             </span><br>
-            <span style="color: white">{{ $t("addInbox") }}</span>
+            <span>{{ $t("addInbox") }}</span>
           </button>
         </div>
         <div
@@ -137,10 +134,9 @@
               <v-icon
                 class="align-middle"
                 name="star"
-                color="white"
               />
             </span><br>
-            <span style="color: white">{{ $t("infoFavorites") }}</span>
+            <span>{{ $t("infoFavorites") }}</span>
           </button>
         </div>
         <div
@@ -157,10 +153,9 @@
               <v-icon
                 class="align-middle"
                 name="trash"
-                color="white"
               />
             </span><br>
-            <span style="color: white">{{ $t("delete") }}</span>
+            <span>{{ $t("delete") }}</span>
           </button>
         </div>
         <div class="ml-auto" />
@@ -171,14 +166,15 @@
           <div>
             <b-dropdown
               id="dropdown-divider"
-              class="m-1"
+              toggle-class="kheopsicon"
               variant="link"
               right
             >
               <template slot="button-content">
-                <add-icon
-                  width="30px"
-                  height="30px"
+                <v-icon
+                  name="add"
+                  width="34px"
+                  height="34px"
                 />
               </template>
               <b-dropdown-item-button
@@ -211,26 +207,28 @@
         >
           <button
             type="button"
-            class=" btn btn-link btn-lg"
+            class=" btn btn-link "
             @click="reloadStudies()"
           >
             <v-icon
               name="refresh"
               scale="2"
+              class="kheopsicon"
             />
           </button>
         </div>
         <div
-          class="d-none d-sm-block align-self-center"
+          class="align-self-center"
         >
           <button
             type="button"
-            class=" btn btn-link btn-lg"
+            class=" btn btn-link"
             @click="setFilters()"
           >
             <v-icon
               name="search"
-              scale="2"
+              class="kheopsicon"
+              scale="1.8"
             />
           </button>
         </div>
@@ -253,18 +251,15 @@
 </template>
 
 <script>
-import ToggleButton from 'vue-js-toggle-button';
-import Vue from 'vue';
 import { mapGetters } from 'vuex';
 import formGetUser from '@/components/user/getUser';
 import ConfirmButton from '@/components/inbox/ConfirmButton.vue';
-import AddIcon from '@/components/kheopsSVG/AddIcon';
-
-Vue.use(ToggleButton);
+import { CurrentUser } from '@/mixins/currentuser.js';
 
 export default {
   name: 'ListHeaders',
-  components: { formGetUser, ConfirmButton, AddIcon },
+  components: { formGetUser, ConfirmButton },
+  mixins: [CurrentUser],
   props: {
     studies: {
       type: Array,
@@ -317,12 +312,14 @@ export default {
       formSendStudy: false,
       confirmDelete: false,
       showFilters: false,
+      albumNameMaxLength: 25,
     };
   },
   computed: {
     ...mapGetters({
       sendingFiles: 'sending',
       series: 'series',
+      source: 'source',
     }),
     selectedStudiesNb() {
       return _.filter(this.studies, (s) => (s.flag.is_selected === true || s.flag.is_indeterminate === true)).length;
@@ -465,14 +462,21 @@ export default {
       });
     },
     getSource() {
-      if (this.albumId === '') {
+      if (this.source.key !== undefined || this.source.value !== undefined) {
         return {
-          inbox: true,
+          [this.source.key]: this.source.value,
         };
       }
-      return {
-        album: this.albumId,
-      };
+      return {};
+    },
+    getHeaders() {
+      if (this.currentuserCapabilitiesToken !== undefined && this.currentuserKeycloakToken !== undefined) {
+        return {
+          Authorization: `Bearer ${this.currentuserKeycloakToken}`,
+          'X-Authorization-Source': `Bearer ${this.currentuserCapabilitiesToken}`,
+        };
+      }
+      return undefined;
     },
     deleteStudies() {
       this.deleteSelectedStudies();
@@ -521,6 +525,7 @@ export default {
     },
     addToAlbum(albumId) {
       const queries = this.getSource();
+      const headers = this.getHeaders();
       let sendSerie = 0;
       let sendStudy = 0;
       const studySerieData = this.generateStudySerieData(albumId);
@@ -529,7 +534,7 @@ export default {
         404: '',
         unknown: '',
       };
-      this.$store.dispatch('putStudiesInAlbum', { queries, data: studySerieData }).then((res) => {
+      this.$store.dispatch('putStudiesInAlbum', { queries, data: studySerieData, headers }).then((res) => {
         res.forEach((data) => {
           if (data.res !== undefined && data.res.status === 201) {
             if (data.serieId !== undefined) {
@@ -541,7 +546,8 @@ export default {
             message[403] = `Forbidden to send in album ${data.albumId}`;
             message[404] = 'Not found';
             message.unknown = `Error unknown for the study ${data.studyId}`;
-            this.checkErrorStatus(data.res !== undefined ? data.res.status : '', message);
+            const status = data.res !== undefined && data.res.status !== undefined ? data.res.status : data.res.request.status;
+            this.checkErrorStatus(status, message);
           }
         });
         if (sendStudy > 0 || sendSerie > 0) {
@@ -571,6 +577,7 @@ export default {
     },
     addToInbox() {
       const queries = this.getSource();
+      const headers = this.getHeaders();
       const studySerieData = this.generateStudySerieData(this.albumId);
       let sendStudy = 0;
       let sendSerie = 0;
@@ -579,7 +586,7 @@ export default {
         404: '',
         unknown: '',
       };
-      this.$store.dispatch('selfAppropriateStudy', { data: studySerieData, queries }).then((res) => {
+      this.$store.dispatch('selfAppropriateStudy', { data: studySerieData, queries, headers }).then((res) => {
         res.forEach((data) => {
           if (data.res !== undefined && data.res.status === 201) {
             if (data.serieId !== undefined) {
@@ -617,8 +624,6 @@ export default {
       this.$emit('reloadStudies');
     },
     goToCreateAlbum() {
-      this.$router.push({ path: '/albums/new' });
-
       const StudiesUID = [];
       this.selectedStudies.forEach((study) => {
         StudiesUID.push(study.StudyInstanceUID.Value[0]);
@@ -645,26 +650,3 @@ export default {
 };
 
 </script>
-<style scoped>
-  .btn-link {
-    font-weight: 400;
-    color: white;
-    background-color: transparent;
-  }
-
-  .btn-link:hover {
-    color: #c7d1db;
-    text-decoration: underline;
-    background-color: transparent;
-    border-color: transparent;
-  }
-
-  .inputfile {
-    width: 0.1px;
-    height: 0.1px;
-    opacity: 0;
-    overflow: hidden;
-    position: absolute;
-    z-index: -1;
-  }
-</style>

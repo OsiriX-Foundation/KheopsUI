@@ -8,9 +8,11 @@
     "cancel": "Cancel",
     "revoke": "Do you want disable the latest sharing link created ?",
     "valid": "Valid",
-    "title": "URL to share",
     "disable": "Revoke",
-    "urlsharing": "Your sharing url :"
+    "urlsharing": "Your sharing url :",
+    "copysuccess": "Successfully copied",
+    "sorryerror": "Sorry, an error occured",
+    "addalbum": "Sharing"
   },
   "fr": {
     "write": "Ajouter et supprimer des séries dans l'album",
@@ -20,37 +22,16 @@
     "cancel": "Annuler",
     "revoke": "Voulez-vous désactiver le dernier lien de partage créé ?",
     "valid": "Valider",
-    "title": "URL à partager",
     "disable": "Désactiver",
-    "urlsharing": "Votre url de partage :"
+    "urlsharing": "Votre url de partage :",
+    "copysuccess": "Copié avec succès",
+    "sorryerror": "Désolé, une erreur est survenue",
+    "addalbum": "Partager"
   }
 }
 </i18n>
 <template>
   <span>
-    <div
-      class="closeBtn d-flex"
-    >
-      <div
-        class="p-2"
-      >
-        <b>{{ $t('title') }}</b>
-      </div>
-      <div
-        class="ml-auto p-1"
-      >
-        <button
-          type="button"
-          class="btn btn-link btn-sm"
-          @click="cancel()"
-        >
-          <close-icon
-            width="20"
-            height="20"
-          />
-        </button>
-      </div>
-    </div>
     <div
       v-if="url === '' && tokens.length === 0"
     >
@@ -63,7 +44,7 @@
         <div class="col-xs-12 col-sm-12 col-md-4">
           <toggle-button
             v-model="token.write_permission"
-            :labels="{checked: 'Yes', unchecked: 'No'}"
+            :color="{checked: '#5fc04c', unchecked: 'grey'}"
           />
         </div>
       </div>
@@ -78,7 +59,20 @@
           <toggle-button
             v-if="token.read_permission"
             v-model="token.download_permission"
-            :labels="{checked: 'Yes', unchecked: 'No'}"
+            :color="{checked: '#5fc04c', unchecked: 'grey'}"
+          />
+        </div>
+      </div>
+      <div class="row mb-2">
+        <div class="col-xs-12 col-sm-12 col-md-8">
+          <label>
+            {{ $t('addalbum') }}
+          </label>
+        </div>
+        <div class="col-xs-12 col-sm-12 col-md-4">
+          <toggle-button
+            v-model="token.appropriate_permission"
+            :color="{checked: '#5fc04c', unchecked: 'grey'}"
           />
         </div>
       </div>
@@ -139,6 +133,8 @@
             <b class="mr-2">{{ url }}</b>
             <button
               v-clipboard:copy="url"
+              v-clipboard:success="onCopy"
+              v-clipboard:error="onCopyError"
               type="button"
               class="btn btn-secondary btn-sm"
             >
@@ -185,11 +181,10 @@
 <script>
 import Datepicker from 'vuejs-datepicker';
 import moment from 'moment';
-import CloseIcon from '@/components/kheopsSVG/CloseIcon';
 
 export default {
   name: 'SharingLink',
-  components: { Datepicker, CloseIcon },
+  components: { Datepicker },
   props: {
     albumId: {
       type: String,
@@ -222,14 +217,6 @@ export default {
       toggle_revoke: false,
     };
   },
-  computed: {
-  },
-  watch: {
-  },
-  created() {
-  },
-  beforeDestroy() {
-  },
   methods: {
     cancel() {
       this.$emit('cancel');
@@ -241,23 +228,12 @@ export default {
     revoke() {
       this.$emit('revoke', this.tokens);
     },
+    onCopy() {
+      this.$snotify.success(this.$t('copysuccess'));
+    },
+    onCopyError() {
+      this.$snotify.error(this.$t('sorryerror'));
+    },
   },
 };
 </script>
-<style>
-div.calendar-wrapper{
-  color: #333;
-}
-.chat-popup {
-  background: #303030;
-  border: 3px solid #f1f1f1;
-  z-index: 9;
-  max-width: 550px;
-  opacity: 1;
-  display: block;
-}
-.closeBtn {
-  position: relative;
-  border-bottom: 1px solid #f1f1f1;
-}
-</style>

@@ -4,13 +4,15 @@
     "welcome": "Welcome",
     "lang": "lang",
     "tooltipHelp": "Help",
-    "tooltipLogout": "Logout"
+    "tooltipLogout": "Logout",
+    "tooltipLogin": "Login"
   },
   "fr": {
     "welcome": "Bienvenue",
     "lang": "lang",
     "tooltipHelp": "Aide",
-    "tooltipLogout": "Déconnexion"
+    "tooltipLogout": "Déconnexion",
+    "tooltipLogin": "Se connecter"
   }
 }
 </i18n>
@@ -27,21 +29,22 @@
     fixed="top"
   >
     <b-navbar-toggle target="nav_collapse" />
-    <b-navbar-brand href="#">
-      <!--
-      <img
-        src="../assets/sib_logo_small.gif"
-        style="margin-right:5px"
-      >
-      -->
-      <router-link
-        to="/"
-        style="font-size: 1.3rem;"
-      >
-        Kheops
-      </router-link>
-    </b-navbar-brand>
-
+    <b-navbar-nav>
+      <div class="d-flex">
+        <div style="padding-right: 5px">
+          <kheops-pyramid
+            width="12.2696mm"
+            height="7.41195mm"
+          />
+        </div>
+        <div class="align-self-end">
+          <kheops-font
+            width="16.5968mm"
+            height="3.70944mm"
+          />
+        </div>
+      </div>
+    </b-navbar-nav>
     <b-collapse
       id="nav_collapse"
       is-nav
@@ -52,49 +55,57 @@
           <b-nav-item
             v-if="logged"
             v-access="'active'"
+            class="font-kheops active"
           >
-            {{ $t('welcome') }} <router-link to="/user">
-              {{ currentuserFullname }}
+            <router-link
+              to="/user"
+            >
+              {{ currentuserFullname !== undefined ? currentuserFullname : currentuserEmail }}
             </router-link>
           </b-nav-item>
           <b-nav-item
             v-else-if="logged === false"
-            v-access="'active'"
+            class="active pointer"
+            :title="$t('tooltipLogin')"
+            @click="login()"
           >
-            <a
-              :title="$t('tooltipLogout')"
-              class="pointer"
-              @click="login()"
+            <span
+              class="font-white"
             >
-              Login
-            </a>
+              {{ $t('tooltipLogin') }}
+            </span>
           </b-nav-item>
-          <b-nav-item v-access="'active'">
-            <a
-              :title="$t('tooltipHelp')"
-              class="pointer"
-              target="_blank"
-              @click="redirect('https://docs.kheops.online')"
+          <b-nav-item
+            class="active pointer"
+            :title="$t('tooltipHelp')"
+            target="_blank"
+            @click="redirect('https://docs.kheops.online')"
+          >
+            <span
+              class="font-white"
             >
               {{ $t('tooltipHelp') }}
               <v-icon name="help" />
-            </a>
+            </span>
           </b-nav-item>
           <b-nav-item
             v-if="logged"
-            v-access="'active'"
+            :title="$t('tooltipLogout')"
+            class="active pointer"
+            @click="logout()"
           >
-            <a
-              :title="$t('tooltipLogout')"
-              class="pointer"
-              @click="logout()"
+            <span
+              class="font-white"
             >
+              {{ $t('tooltipLogout') }}
               <v-icon name="sign-out-alt" />
-            </a>
+            </span>
           </b-nav-item>
           <b-nav-item-dropdown
             :text="`${$t('lang')}: ${lang}`"
+            toggle-class="font-white"
             right
+            class="active"
           >
             <b-dropdown-item
               v-for="language in availableLanguage"
@@ -103,7 +114,7 @@
               @click="changeLang(language)"
             >
               <span
-                style="text-transform: uppercase;"
+                class="text-uppercase"
               >
                 {{ language }}
               </span>
@@ -119,9 +130,12 @@
 import Vue from 'vue';
 import store from '@/store';
 import { CurrentUser } from '@/mixins/currentuser.js';
+import KheopsPyramid from '@/components/kheopsSVG/KheopsPyramid.vue';
+import KheopsFont from '@/components/kheopsSVG/KheopsFont.vue';
 
 export default {
   name: 'NavHeader',
+  components: { KheopsPyramid, KheopsFont },
   mixins: [CurrentUser],
   props: {
     logged: {
@@ -148,9 +162,12 @@ export default {
   },
   methods: {
     setFromLocalStorage() {
-      const language = localStorage.getItem('language');
-      if (language !== null) {
-        this.changeLang(language);
+      const storageLanguage = localStorage.getItem('language');
+      const navigatorLanguage = (navigator.language || navigator.userLanguage).split('-')[0];
+      if (storageLanguage !== null) {
+        this.changeLang(storageLanguage);
+      } else {
+        this.changeLang(navigatorLanguage);
       }
     },
     logout() {

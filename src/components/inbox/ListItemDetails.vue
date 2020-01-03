@@ -33,7 +33,7 @@
 
 <template>
   <div class="row">
-    <div class="col-xl-auto mb-4">
+    <div class="col-lg-2 col-xl-auto mb-4">
       <nav class="nav nav-pills nav-justified flex-column text-center text-xl-left">
         <a
           class="nav-link"
@@ -59,7 +59,7 @@
       </nav>
     </div>
     <div
-      class="col-sm-12 col-md-12 col-lg-12 col-xl-10"
+      class="col-sm-12 col-md-12 col-lg-10 col-xl-10"
     >
       <div
         v-if="study.flag.view === 'series'"
@@ -71,7 +71,7 @@
           <div
             v-for="serie in series[studyUID]"
             :key="serie.id"
-            class="col-sm-12 col-md-12 col-lg-12 col-xl-6 mb-5"
+            class="col-12 col-sm-6 col-md-4 col-lg-3 col-xl-2 mb-5"
           >
             <series-summary
               :serie="serie"
@@ -88,8 +88,7 @@
           v-if="loadingSerie === false && errorSeries === true"
         >
           <div
-            class="d-flex flex-column justify-content-center align-items-center"
-            style="height: 100%;"
+            class="d-flex flex-column justify-content-center align-items-center full-height"
           >
             <div class="mb-3">
               {{ $t('errorSeries') }}
@@ -126,7 +125,7 @@ import { mapGetters } from 'vuex';
 import PulseLoader from 'vue-spinner/src/PulseLoader.vue';
 import commentsAndNotifications from '@/components/comments/commentsAndNotifications';
 import studyMetadata from '@/components/study/studyMetadata';
-import SeriesSummary from '@/components/inbox/SeriesSummaryObject';
+import SeriesSummary from '@/components/inbox/SeriesSummary';
 
 export default {
   name: 'ListItemDetails',
@@ -193,7 +192,8 @@ export default {
           this.loadingSerie = false;
           this.errorSeries = false;
         }
-      }).catch(() => {
+      }).catch((err) => {
+        console.log(err);
         this.loadingSerie = false;
         this.errorSeries = true;
       });
@@ -210,9 +210,3 @@ export default {
   },
 };
 </script>
-
-<style scoped>
-.nav a:hover:not(.active) {
-  opacity: 0.5;
-}
-</style>

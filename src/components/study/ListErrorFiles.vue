@@ -37,11 +37,10 @@
             <!--
               https://css-tricks.com/almanac/properties/o/overflow-wrap/
             -->
-            {{ error.id }}
+            {{ error.path }}
           </div>
           <div
-            class="col-sm-auto"
-            style="color: red"
+            class="col-sm-auto text-warning"
           >
             {{ error.value }}
           </div>
@@ -96,29 +95,3 @@ export default {
   },
 };
 </script>
-
-<style scoped>
-  .file-listing{
-    width: 250px;
-    padding: 10px;
-    border-bottom: 1px solid #ddd;
-    overflow-wrap: break-word;
-  }
-  .files-listing{
-    width: 260px;
-    margin: auto;
-    max-height: 400px;
-    overflow: auto;
-  }
-  .container-btn{
-    padding: 10px;
-  }
-  .inputfile {
-    width: 0.1px;
-    height: 0.1px;
-    opacity: 0;
-    overflow: hidden;
-    position: absolute;
-    z-index: -1;
-  }
-</style>

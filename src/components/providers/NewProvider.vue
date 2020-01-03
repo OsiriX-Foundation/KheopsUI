@@ -17,8 +17,7 @@
 <template>
   <div>
     <div
-      class="my-3 selection-button-container"
-      style=" position: relative;"
+      class="my-3 selection-button-container provider-position"
     >
       <h4>
         <button
@@ -44,6 +43,7 @@
         <div class="col-xs-12 col-sm-12 col-md-9 mb-3">
           <input
             v-model="provider.name"
+            v-focus
             type="text"
             :placeholder="$t('nameProvider')"
             class="form-control"

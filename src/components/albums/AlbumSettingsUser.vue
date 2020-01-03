@@ -5,7 +5,7 @@
     "add_user": "Invite a user",
     "add_series": "Add Studies / Series",
     "download_series": "Show Download Button",
-    "send_series": "Add to album / inbox",
+    "send_series": "Sharing",
     "delete_series": "Remove Studies / Series",
     "write_comments": "Write Comments",
     "albumuseraddsuccess": "User successfully added to the album",
@@ -21,7 +21,7 @@
     "add_user": "Inviter un utilisateur",
     "add_series": "Ajouter une étude / série",
     "download_series": "Montrer le bouton de téléchargement",
-    "send_series": "Ajouter à un album / inbox",
+    "send_series": "Partager",
     "delete_series": "Supprimer une étude / série",
     "write_comments": "Commenter",
     "albumuseraddsuccess": "L'utilisateur a été ajouté avec succès à l'album",
@@ -38,9 +38,7 @@
 <template>
   <div class="container">
     <h3
-      v-if="!form_add_user"
-      class="pointer d-sm-inline-flex"
-      style="width: 100%"
+      class="d-sm-inline-flex full-width"
     >
       <div
         class="mr-auto"
@@ -48,7 +46,7 @@
         {{ $t('userlist') }}
       </div>
       <button
-        v-if="album.add_user||album.is_admin"
+        v-if="(album.add_user||album.is_admin) && form_add_user === false"
         class="btn btn-secondary"
         @click="form_add_user=true"
       >
@@ -58,45 +56,41 @@
           class="mr-2"
         />{{ $t('add_user') }}
       </button>
-    </h3>
-    <div
-      v-if="form_add_user"
-      class="card"
-    >
-      <div class="card-body">
-        <form @submit.prevent="addUser">
-          <div class="input-group mb-2">
-            <div>
-              <input
-                v-model="new_user_name"
-                type="email"
-                class="form-control"
-                autofocus
-                :placeholder="'email '+$t('user')"
-              >
-            </div>
-            <div class="input-group-append">
-              <button
-                class="btn btn-primary"
-                type="submit"
-                :disabled="!validEmail(new_user_name)"
-              >
-                {{ $t('add') }}
-              </button>
-              <button
-                class="btn btn-secondary"
-                type="reset"
-                tabindex="0"
-                @keyup.esc="new_user_name=''"
-                @click="new_user_name='';form_add_user=!form_add_user"
-              >
-                {{ $t('cancel') }}
-              </button>
-            </div>
+      <form
+        v-if="form_add_user"
+        @submit.prevent="addUser"
+      >
+        <div class="input-group">
+          <div>
+            <input
+              v-model="new_user_name"
+              v-focus
+              type="email"
+              class="form-control"
+              :placeholder="'email '+$t('user')"
+            >
           </div>
-        </form>
-      </div>
-    </div>
+          <div class="input-group-append">
+            <button
+              class="btn btn-primary"
+              type="submit"
+              :disabled="!validEmail(new_user_name)"
+            >
+              {{ $t('add') }}
+            </button>
+            <button
+              class="btn btn-secondary"
+              type="reset"
+              tabindex="0"
+              @keyup.esc="new_user_name=''"
+              @click="new_user_name='';form_add_user=!form_add_user"
+            >
+              {{ $t('cancel') }}
+            </button>
+          </div>
+        </div>
+      </form>
+    </h3>
 
     <album-users
       :album="album"
@@ -105,39 +99,64 @@
       :show-change-role="true"
     />
 
-    <fieldset class="user_settings">
-      <legend>{{ $t('usersettings') }}</legend>
-      <div
-        v-for="(label,idx) in userSettings"
-        :key="idx"
-        class="row form-group"
-        :class="(label=='send_series')?'offset-1':''"
-      >
-        <div>
-          <toggle-button
-            v-if="album.is_admin"
-            :value="album[label]"
-            :labels="{checked: 'Yes', unchecked: 'No'}"
-            :disabled="(!album.download_series && label=='send_series')"
-            :sync="true"
-            @change="patchAlbum(label)"
-          />
-          <v-icon
-            v-if="!album.is_admin && !album[label]"
-            name="ban"
-            class="text-danger"
-          />
-          <v-icon
-            v-if="!album.is_admin && album[label]"
-            name="check-circle"
-            class="text-success"
-          />
+    <div class="card user-settings">
+      <div class="container mb-3">
+        <div
+          class="bg-primary row"
+        >
+          <div class="col-xl-1" />
+          <div class="col-xl-11">
+            <h4
+              class="mt-3 mb-3 ml-2"
+            >
+              {{ $t('usersettings') }}
+            </h4>
+          </div>
         </div>
-        <label class="ml-2">
-          {{ $t(label) }}
-        </label>
+        <div
+          class="row toggle-padding mt-3"
+        >
+          <div class="col-xl-1" />
+          <div
+            v-for="(value, idx) in numberCol"
+            :key="idx"
+            class="col-md-12 col-lg-6 col-xl-5"
+          >
+            <span
+              v-for="(label,idy) in userSettings.slice((userSettings.length/2)*(idx), (userSettings.length/2)*value)"
+              :key="idy"
+            >
+              <div
+                class="mt-2"
+                :class="(label=='send_series')?'offset-1':''"
+              >
+                <toggle-button
+                  v-if="album.is_admin"
+                  :value="album[label]"
+                  :disabled="(!album.download_series && label=='send_series')"
+                  :sync="true"
+                  :color="{checked: '#5fc04c', unchecked: 'grey'}"
+                  @change="patchAlbum(label)"
+                />
+                <v-icon
+                  v-if="!album.is_admin && !album[label]"
+                  name="ban"
+                  class="text-danger"
+                />
+                <v-icon
+                  v-if="!album.is_admin && album[label]"
+                  name="check-circle"
+                  class="text-success"
+                />
+                <label class="ml-2 mt-2 word-break">
+                  {{ $t(label) }}
+                </label>
+              </div>
+            </span>
+          </div>
+        </div>
       </div>
-    </fieldset>
+    </div>
   </div>
 </template>
 
@@ -175,6 +194,7 @@ export default {
         send_series: 'sendSeries',
         write_comments: 'writeComments',
       },
+      numberCol: 2,
     };
   },
   computed: {
@@ -187,7 +207,7 @@ export default {
   },
   methods: {
     addUser() {
-      const sameUserName = this.users.filter((user) => user.user_name === this.new_user_name);
+      const sameUserName = this.users.filter((user) => user.email === this.new_user_name);
       if (sameUserName.length > 0) {
         this.$snotify.error(this.$t('allreadypresent'));
       } else if (this.validEmail(this.new_user_name)) {
@@ -197,7 +217,6 @@ export default {
         };
         this.$store.dispatch('addAlbumUser', params).then((res) => {
           if (res.status === 201) {
-            this.$snotify.success(this.$t('albumuseraddsuccess'));
             this.new_user_name = '';
             this.form_add_user = false;
             this.confirm_delete = '';
@@ -230,20 +249,3 @@ export default {
 };
 
 </script>
-
-<style scoped>
-input::placeholder {
-  text-transform: lowercase;
-}
-fieldset.user_settings {
-  border: 1px solid #333;
-  padding: 20px;
-  background-color: #303030 ;
-}
-
-fieldset.user_settings legend{
-  padding: 0 20px;
-  width: auto;
-
-}
-</style>

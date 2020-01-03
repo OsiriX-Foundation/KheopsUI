@@ -48,15 +48,19 @@ Props :
       <tbody>
         <tr
           v-for="user in users"
-          :key="user.user_name"
+          :key="user.email"
         >
           <td>
-            {{ user.user_name }}
+            {{ user|getUsername }}
             <span
               v-if="user.is_admin"
-              style="color:#13B98B"
             >
-              {{ $t("Admin") }}
+              -
+              <span
+                class="font-neutral"
+              >
+                {{ $t("Admin") }}
+              </span>
             </span>
             <!-- on mobile -->
             <div
@@ -64,7 +68,7 @@ Props :
               class="d-sm-none"
             >
               <div
-                v-if="confirmDelete !== user.user_name && confirmResetAdmin !== user.user_name"
+                v-if="confirmDelete !== user.email && confirmResetAdmin !== user.email"
                 class="user_actions"
               >
                 <a
@@ -78,7 +82,7 @@ Props :
                 </a>
                 <br>
                 <a
-                  v-if="album.is_admin && showDeleteUser && user.user_id !== currentuserSub"
+                  v-if="album.is_admin && showDeleteUser && user.sub !== currentuserSub"
                   class="text-danger"
                   @click.stop="deleteUser(user)"
                 >
@@ -86,7 +90,7 @@ Props :
                   <v-icon name="trash" />
                 </a>
               </div>
-              <div v-if="confirmDelete === user.user_name">
+              <div v-if="confirmDelete === user.email">
                 <span class="text-danger mr-2">
                   {{ $t("warningtoggledelete") }}
                 </span>
@@ -107,7 +111,7 @@ Props :
                   </button>
                 </div>
               </div>
-              <div v-if="confirmResetAdmin === user.user_name">
+              <div v-if="confirmResetAdmin === user.email">
                 <span class="text-danger mr-2">
                   {{ $t("warningtoggleadmin") }}
                 </span>
@@ -137,11 +141,12 @@ Props :
             :class="mobiledetect ? '' : 'showOnTrHover'"
           >
             <div
-              v-if="confirmDelete !== user.user_name && confirmResetAdmin !== user.user_name"
+              v-if="confirmDelete !== user.email && confirmResetAdmin !== user.email"
               class="user_actions"
             >
               <a
                 v-if="showChangeRole"
+                class="font-white"
                 @click.stop="toggleAdmin(user)"
               >
                 {{ $t('changerole') }} {{ (user.is_admin)?$t('user'):$t("admin") }}
@@ -151,7 +156,7 @@ Props :
               </a>
               <br>
               <a
-                v-if="album.is_admin && showDeleteUser && user.user_id !== currentuserSub"
+                v-if="album.is_admin && showDeleteUser && user.sub !== currentuserSub"
                 class="text-danger"
                 @click.stop="deleteUser(user)"
               >
@@ -159,7 +164,7 @@ Props :
                 <v-icon name="trash" />
               </a>
             </div>
-            <div v-if="confirmDelete === user.user_name">
+            <div v-if="confirmDelete === user.email">
               <span class="text-danger mr-2">
                 {{ $t("warningtoggledelete") }}
               </span>
@@ -180,7 +185,7 @@ Props :
                 </button>
               </div>
             </div>
-            <div v-if="confirmResetAdmin === user.user_name">
+            <div v-if="confirmResetAdmin === user.email">
               <span class="text-danger mr-2">
                 {{ $t("warningtoggleadmin") }}
               </span>
@@ -251,23 +256,21 @@ export default {
   },
   methods: {
     toggleAdmin(user) {
-      if (this.currentuserSub === user.user_id && !this.confirmResetAdmin) {
-        this.confirmResetAdmin = user.user_name;
+      if (this.currentuserSub === user.sub && !this.confirmResetAdmin) {
+        this.confirmResetAdmin = user.email;
         return;
       }
 
       const params = {
         album_id: this.album.album_id,
-        user_name: user.user_name,
+        user_name: user.email,
         user_is_admin: !user.is_admin,
       };
       this.$store.dispatch('manageAlbumUserAdmin', params).then((res) => {
         if (res.status === 204) {
-          const message = (user.is_admin) ? this.$t('usernotsettoadmin') : this.$t('usersettoadmin');
-          if (this.confirmResetAdmin === user.user_name) {
+          if (this.confirmResetAdmin === user.email) {
             this.getAlbum();
           }
-          this.$snotify.success(message);
         } else {
           this.$snotify.error(this.$t('sorryerror'));
         }
@@ -278,16 +281,14 @@ export default {
       });
     },
     deleteUser(user) {
-      if (this.confirmDelete !== user.user_name) this.confirmDelete = user.user_name;
+      if (this.confirmDelete !== user.email) this.confirmDelete = user.email;
       else {
         const params = {
           album_id: this.album.album_id,
-          user: user.user_name,
+          user: user.email,
         };
         this.$store.dispatch('removeAlbumUser', params).then((res) => {
-          if (res.status === 204) {
-            this.$snotify.success(this.$t('albumuserdeletesuccess'));
-          } else {
+          if (res.status !== 204) {
             this.$snotify.error(this.$t('sorryerror'));
           }
           this.confirmDelete = '';
@@ -306,13 +307,3 @@ export default {
   },
 };
 </script>
-
-<style scoped>
-div.user-table-container{
-  min-height: 200px;
-  padding: 25px 0;
-}
-a {
-  cursor: pointer;
-}
-</style>

@@ -14,13 +14,14 @@
     "startdate": "start date",
     "creationdate": "creation date",
     "revokeddate": "revoke date",
-    "revoke": "revoke",
+    "revoke": "Revoke",
     "thistokenrevoked": "this token is revoked",
     "lastuse": "last use date",
     "back": "back",
     "warningrevoke": "Are you sure you want to revoke this token ?",
     "cancel": "Cancel",
-    "confirm": "Confirm"
+    "confirm": "Confirm",
+    "createdby": "Created by"
   },
   "fr": {
     "token": "token",
@@ -36,13 +37,14 @@
     "startdate": "date de début",
     "creationdate": "date de création",
     "revokeddate": "date de révoquation",
-    "revoke": "révoquer",
+    "revoke": "Révoquer",
     "thistokenrevoked": "ce token a été revoqué",
     "lastuse": "dernière utilisation",
     "back": "retour",
     "warningrevoke": "Etes-vous sûr de vouloir revoquer ce token ?",
     "cancel": "Cancel",
-    "confirm": "Confirm"
+    "confirm": "Confirm",
+    "createdby": "Créé par"
   }
 }
 </i18n>
@@ -50,8 +52,7 @@
 <template>
   <div class="token">
     <div
-      class="my-3 selection-button-container"
-      style=" position: relative;"
+      class="my-3 selection-button-container token-position"
     >
       <h4>
         <button
@@ -78,7 +79,9 @@
     <div>
       <div class="row">
         <div class="col-xs-12 col-sm-3">
-          <dt>{{ $t('scope') }}</dt>
+          <dt class="token-title">
+            {{ $t('scope') }}
+          </dt>
         </div>
         <div class="col-xs-12 col-sm-9">
           <dd>
@@ -91,13 +94,31 @@
         class="row"
       >
         <div class="col-xs-12 col-sm-3">
-          <dt>{{ $t('album') }}</dt>
+          <dt class="token-title">
+            {{ $t('album') }}
+          </dt>
         </div>
-        <div class="col-xs-12 col-sm-9">
+        <div class="col-xs-12 col-sm-9 word-break">
           <dd>
-            <router-link :to="`/albums/${token.album.album_id}`">
+            <router-link
+              :to="`/albums/${token.album.album_id}`"
+            >
               {{ token.album.name }}
             </router-link>
+          </dd>
+        </div>
+      </div>
+      <div
+        class="row"
+      >
+        <div class="col-xs-12 col-sm-3">
+          <dt class="token-title">
+            {{ $t('createdby') }}
+          </dt>
+        </div>
+        <div class="col-xs-12 col-sm-9 word-break">
+          <dd>
+            {{ token.created_by|getUsername }}
           </dd>
         </div>
       </div>
@@ -106,7 +127,9 @@
         class="row"
       >
         <div class="col-xs-12 col-sm-3">
-          <dt>{{ $t('permission') }}</dt>
+          <dt class="token-title">
+            {{ $t('permission') }}
+          </dt>
         </div>
         <div class="col-xs-12 col-sm-9">
           <dd>{{ permissions }}</dd>
@@ -114,7 +137,9 @@
       </div>
       <div class="row">
         <div class="col-xs-12 col-sm-3">
-          <dt>{{ $t('expirationdate') }}</dt>
+          <dt class="token-title">
+            {{ $t('expirationdate') }}
+          </dt>
         </div>
         <div class="col-xs-12 col-sm-3">
           <dd>
@@ -124,7 +149,9 @@
       </div>
       <div class="row">
         <div class="col-xs-12 col-sm-3">
-          <dt>{{ $t('startdate') }}</dt>
+          <dt class="token-title">
+            {{ $t('startdate') }}
+          </dt>
         </div>
         <div class="col-xs-12 col-sm-3">
           <dd>
@@ -134,7 +161,9 @@
       </div>
       <div class="row">
         <div class="col-xs-12 col-sm-3">
-          <dt>{{ $t('creationdate') }}</dt>
+          <dt class="token-title">
+            {{ $t('creationdate') }}
+          </dt>
         </div>
         <div class="col-xs-12 col-sm-3">
           <dd>
@@ -147,7 +176,9 @@
         class="row"
       >
         <div class="col-xs-12 col-sm-3">
-          <dt>{{ $t('lastuse') }}</dt>
+          <dt class="token-title">
+            {{ $t('lastuse') }}
+          </dt>
         </div>
         <div class="col-xs-12 col-sm-3">
           <dd>
@@ -160,7 +191,9 @@
         class="row"
       >
         <div class="col-xs-12 col-sm-3">
-          <dt>{{ $t('revokeddate') }}</dt>
+          <dt class="token-title">
+            {{ $t('revokeddate') }}
+          </dt>
         </div>
         <div class="col-xs-12 col-sm-3">
           <dd class="text-danger">
@@ -291,8 +324,7 @@ export default {
       if (this.confirmRevoke === false) {
         this.confirmRevoke = true;
       } else {
-        this.$store.dispatch('revokeToken', { token_id: this.tokenId }).then((res) => {
-          this.$snotify.success(`token ${res.data.title} ${this.$t('revokedsuccess')}`);
+        this.$store.dispatch('revokeToken', { token_id: this.tokenId }).then(() => {
           this.cancel();
         }).catch(() => {
           this.$snotify.error(this.$t('sorryerror'));
@@ -305,20 +337,3 @@ export default {
   },
 };
 </script>
-
-<style scoped>
-dt{
-  text-align: left;
-  text-transform: capitalize;
-}
-label{
-  text-transform: capitalize;
-  margin-left: 1em;
-}
-div.calendar-wrapper{
-  color: #333;
-}
-button{
-  text-transform: capitalize;
-}
-</style>

@@ -2,10 +2,10 @@ import Vue from 'vue';
 import { HTTP } from '@/router/http';
 import dicomoperations from '@/mixins/dicomoperations';
 import httpoperations from '@/mixins/httpoperations';
-import SRImage from '@/assets/SR_2.png';
-import PDFImage from '@/assets/pdf-240x240.png';
-import VideoImage from '@/assets/video.png';
-import DicomLogo from '@/assets/dicom_logo.png';
+import SRImage from '@/assets/img/SR_2.png';
+import PDFImage from '@/assets/img/pdf-240x240.png';
+import VideoImage from '@/assets/img/video.png';
+import DicomLogo from '@/assets/img/dicom_logo.png';
 
 // initial state
 const state = {
@@ -14,6 +14,11 @@ const state = {
     is_selected: false,
     is_favorite: false,
   },
+  modalities: [
+    'DOC',
+    'XC',
+    'SR',
+  ],
 };
 
 // getters
@@ -56,15 +61,19 @@ const actions = {
   },
   setSerieImage({ dispatch }, params) {
     const serie = state.series[params.StudyInstanceUID][params.SeriesInstanceUID];
-    if (serie.NumberOfSeriesRelatedInstances.Value[0] === 1) {
-      return dispatch('getSerieMetadata', { StudyInstanceUID: params.StudyInstanceUID, SeriesInstanceUID: params.SeriesInstanceUID }).then((res) => {
+    const checkNumberOfSeriesRelatedInstance = (serie.NumberOfSeriesRelatedInstances !== undefined && serie.NumberOfSeriesRelatedInstances.Value !== undefined && serie.NumberOfSeriesRelatedInstances.Value[0] === 1);
+    const checkModalities = !checkNumberOfSeriesRelatedInstance && (serie.Modality !== undefined && serie.Modality.Value !== undefined && state.modalities.includes(serie.Modality.Value[0]));
+    if ((checkModalities) || (checkNumberOfSeriesRelatedInstance)) {
+      return dispatch('getSeriesInstances', { StudyInstanceUID: params.StudyInstanceUID, SeriesInstanceUID: params.SeriesInstanceUID }).then((res) => {
         if (res.data !== undefined) {
+          const modality = serie.Modality !== undefined ? serie.Modality.Value[0] : '';
           return dispatch('setImageSrc', {
-            StudyInstanceUID: params.StudyInstanceUID, serie, serieUID: params.SeriesInstanceUID, data: res.data,
+            StudyInstanceUID: params.StudyInstanceUID, serie, serieUID: params.SeriesInstanceUID, data: res.data, modality,
           });
         }
         return res;
       }).catch((err) => {
+        dispatch('setImageError', serie);
         Promise.reject(err);
       });
     }
@@ -74,7 +83,15 @@ const actions = {
       serie,
     });
   },
-  getSerieMetadata(context, params) {
+  getSeriesInstances(context, params) {
+    const request = `/studies/${params.StudyInstanceUID}/series/${params.SeriesInstanceUID}/instances`;
+    let queries = '';
+    if (params.queries !== undefined) {
+      queries = httpoperations.getQueriesParameters(params.queries);
+    }
+    return HTTP.get(request + queries).then((res) => res).catch((err) => Promise.reject(err));
+  },
+  getSeriesMetadata(context, params) {
     const request = `/studies/${params.StudyInstanceUID}/series/${params.SeriesInstanceUID}/metadata`;
     let queries = '';
     if (params.queries !== undefined) {
@@ -90,10 +107,11 @@ const actions = {
       videoPhotographicImageStorage: '1.2.840.10008.5.1.4.1.1.77.1.4.1',
       encapsulatedPDFStorage: '1.2.840.10008.5.1.4.1.1.104.1',
     };
+    const modality = params.modality.length > 0 || params.data[0][tagModality] === undefined ? params.modality : params.data[0][tagModality].Value[0];
     if (params.data[0][tagSOPClassUID] !== undefined) {
       serie.SOPClassUID = params.data[0][tagSOPClassUID];
     }
-    if (params.data[0][tagModality].Value[0].includes('SR')) {
+    if (modality.includes('SR')) {
       serie.imgSrc = SRImage;
       commit('SET_SERIE', { StudyInstanceUID: params.StudyInstanceUID, serie: params.serie, SeriesInstanceUID: params.serieUID });
     } else if (params.data[0][tagSOPClassUID].Value[0] === SOPClassUID.videoPhotographicImageStorage) {
@@ -111,13 +129,14 @@ const actions = {
     }
     return true;
   },
-  getImage({ commit }, params) {
-    const request = `/wado?studyUID=${params.StudyInstanceUID}&seriesUID=${params.SeriesInstanceUID}&requestType=WADO&rows=250&columns=250&contentType=image%2Fjpeg`;
+  getImage({ commit, dispatch }, params) {
+    const request = `/studies/${params.StudyInstanceUID}/series/${params.SeriesInstanceUID}/thumbnail`;
+    const queries = `viewport=${encodeURIComponent('256,256')}`;
     const { serie } = params;
-    return HTTP.get(request, {
+    return HTTP.get(`${request}?${queries}`, {
       responseType: 'arraybuffer',
       headers: {
-        Accept: 'image/jpeg',
+        Accept: 'image/png',
       },
     }).then((resp) => {
       let img = DicomLogo;
@@ -131,9 +150,13 @@ const actions = {
       serie.imgSrc = img;
       commit('SET_SERIE', { StudyInstanceUID: params.StudyInstanceUID, SeriesInstanceUID: params.SeriesInstanceUID, serie: params.serie });
     }).catch(() => {
-      serie.imgSrc = DicomLogo;
-      commit('SET_SERIE', { StudyInstanceUID: params.StudyInstanceUID, SeriesInstanceUID: params.SeriesInstanceUID, serie: params.serie });
+      dispatch('setImageError', serie);
     });
+  },
+  setImageError({ commit }, params) {
+    const serie = params;
+    serie.imgSrc = DicomLogo;
+    commit('SET_SERIE', { StudyInstanceUID: params.StudyInstanceUID, SeriesInstanceUID: params.SeriesInstanceUID, serie: params.serie });
   },
   setFlagByStudyUIDSerieUID({ commit }, params) {
     const serie = state.series[params.StudyInstanceUID][params.SeriesInstanceUID];

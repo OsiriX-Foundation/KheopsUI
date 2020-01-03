@@ -4,19 +4,23 @@
     "studies": "Studies",
     "comments": "Comments",
     "settings": "Settings",
-    "twitterEnable": "Twitter link enable",
+    "twitterEnable": "Twitter link enabled",
     "twitterDisable": "No twitter link",
-    "sharingEnable": "Sharing link enable",
-    "sharingDisable": "No sharing link"
+    "sharingEnable": "Sharing link enabled",
+    "sharingDisable": "No sharing link",
+    "sharingTitle": "Sharing URL",
+    "twitterText": "My KHEOPS shared album. {link} #KHEOPS"
   },
   "fr": {
     "studies": "Etudes",
     "comments": "Commentaires",
     "settings": "Réglages",
-    "twitterEnable": "Lien twitter déjà actif",
+    "twitterEnable": "Lien twitter actif",
     "twitterDisable": "Pas de lien twitter",
-    "sharingEnable": "Lien de partage déjà actif",
-    "sharingDisable": "Pas de lien de partage"
+    "sharingEnable": "Lien de partage actif",
+    "sharingDisable": "Pas de lien de partage",
+    "sharingTitle": "URL à partager",
+    "twitterText": "Mon album KHEOPS partagé. {link} #KHEOPS"
   }
 }
 </i18n>
@@ -30,7 +34,9 @@
     >
       <div class="row">
         <div class="col-12 col-sm-12 col-md-12 col-lg-6">
-          <h3>
+          <h3
+            class="album-title word-break"
+          >
             <v-icon
               name="book"
               scale="2"
@@ -51,7 +57,7 @@
               v-if="album.is_admin === true"
               id="twitter-link"
               :text="twitterToken.length > 0 ? $t('twitterEnable') : $t('twitterDisable')"
-              style="cursor: pointer;"
+              class="pointer"
               @click.stop="toggleTwitter(album.album_id)"
             >
               <v-icon
@@ -77,6 +83,29 @@
         </div>
         <div class="col-12 col-sm-12 col-md-12 col-lg-6 mb-3">
           <nav class="nav nav-pills nav-fill flex-column flex-lg-row text-center justify-content-lg-end">
+            <router-link
+              :to="{ name: 'albumview', params: { view: 'studies' }}"
+              class="nav-link"
+              :class="(currentView === 'studies' || currentView === undefined)?'active':''"
+              active-class="active"
+            >
+              {{ $t('studies') }}
+            </router-link>
+            <router-link
+              :to="{ name: 'albumview', params: { view: 'comments' }}"
+              class="nav-link"
+              active-class="active"
+            >
+              {{ $t('comments') }}
+            </router-link>
+            <router-link
+              :to="{ name: 'albumview', params: { view: 'settings' }}"
+              class="nav-link"
+              active-class="active"
+            >
+              {{ $t('settings') }}
+            </router-link>
+            <!--
             <a
               class="nav-link"
               :class="(currentView === 'studies' || currentView === undefined)?'active':''"
@@ -98,6 +127,7 @@
             >
               {{ $t('settings') }}
             </a>
+            -->
           </nav>
         </div>
         <!-- <div class = 'col-md'></div> -->
@@ -113,8 +143,7 @@
           class="card"
         >
           <div
-            class="card-body"
-            style="max-height: 135px; overflow-y: auto"
+            class="card-body album-description"
           >
             <p
               v-for="line in album.description.split('\n')"
@@ -127,8 +156,7 @@
         </div>
       </div>
       <component-import-study
-        :album="album"
-        :source="source"
+        :album-i-d="albumID"
         :permissions="permissions"
       />
     </span>
@@ -146,10 +174,16 @@
       :show="showRevokeTwitter"
       placement="auto"
     >
+      <template v-slot:title>
+        <pop-over-title
+          title="Twitter"
+          @cancel="showRevokeTwitter = false"
+        />
+      </template>
       <twitter-link
         :tokens="twitterToken"
-        @cancel="showRevokeTwitter = false"
         @revoke="revokeTwitterTokens"
+        @cancel="showRevokeTwitter = false"
       />
     </b-popover>
     <b-popover
@@ -158,6 +192,12 @@
       :show.sync="sharingTokenParams.show"
       placement="auto"
     >
+      <template v-slot:title>
+        <pop-over-title
+          :title="$t('sharingTitle')"
+          @cancel="cancelSharingToken"
+        />
+      </template>
       <sharing-link
         :album-id="albumID"
         :url="urlSharing"
@@ -176,13 +216,14 @@ import moment from 'moment';
 import AlbumComments from '@/components/albums/AlbumComments';
 import AlbumSettings from '@/components/albums/AlbumSettings';
 import ComponentImportStudy from '@/components/study/ComponentImportStudy';
+import PopOverTitle from '@/components/socialmedia/PopOverTitle';
 import SharingLink from '@/components/socialmedia/SharingLink';
 import TwitterLink from '@/components/socialmedia/TwitterLink';
 
 export default {
   name: 'Album',
   components: {
-    ComponentImportStudy, AlbumSettings, AlbumComments, SharingLink, TwitterLink,
+    ComponentImportStudy, AlbumSettings, AlbumComments, PopOverTitle, SharingLink, TwitterLink,
   },
   data() {
     return {
@@ -220,12 +261,6 @@ export default {
     albumID() {
       return this.$route.params.album_id;
     },
-    source() {
-      return {
-        key: 'album',
-        value: this.albumID,
-      };
-    },
     permissions() {
       return {
         add_series: this.album.add_series || this.album.is_admin,
@@ -245,10 +280,7 @@ export default {
   },
   watch: {
     albumID() {
-      this.loading = true;
-      this.loadAlbum().then(() => {
-        this.loading = false;
-      });
+      this.initAlbum();
     },
     currentView() {
       if (this.currentView !== undefined) {
@@ -262,21 +294,28 @@ export default {
     },
   },
   created() {
-    this.loading = true;
-    this.loadAlbum().then((res) => {
-      if (res !== undefined && res.status === 200) {
-        if (this.album.is_admin === true) {
-          this.getTokens();
-        }
-        this.loading = false;
-      }
-    });
-  },
-  beforeDestroy() {
-    this.$store.commit('INIT_ALBUM');
-    this.$store.commit('INIT_ALBUM_USERS');
+    this.initAlbum();
   },
   methods: {
+    initAlbum() {
+      this.$store.commit('INIT_ALBUM');
+      this.$store.commit('INIT_ALBUM_USERS');
+      this.$store.commit('INIT_TOKENS');
+      this.loading = true;
+      this.loadAlbum().then((res) => {
+        if (res !== undefined && res.status === 200) {
+          if (this.album.is_admin === true) {
+            this.getTokens();
+          }
+          this.loading = false;
+        }
+      });
+      const source = {
+        key: 'album',
+        value: this.albumID,
+      };
+      this.$store.dispatch('setSource', source);
+    },
     getTokens() {
       const queries = {
         valid: this.validParamsToken,
@@ -310,7 +349,8 @@ export default {
       const twitterWindow = window.open('', 'twitter');
       this.createToken(this.twitterTokenParams).then((res) => {
         const urlTwitter = 'https://twitter.com/intent/tweet';
-        const urlSharing = `I want to show you my study album ! Click on this link ${process.env.VUE_APP_URL_ROOT}/view/${res.data.access_token} #Kheops`;
+        const link = `${process.env.VUE_APP_URL_ROOT}/view/${res.data.access_token}`;
+        const urlSharing = this.$t('twitterText', { link });
         const queries = `?text=${encodeURIComponent(urlSharing)}`;
         twitterWindow.location.href = urlTwitter + queries;
       }).catch(() => {
@@ -357,31 +397,3 @@ export default {
   },
 };
 </script>
-
-<style scoped>
-h3 {
-  margin-bottom: 40px;
-  float: left;
-}
-
-h5.user{
-  float: left;
-  margin-right: 10px;
-}
-
-.icon{
-  margin-left: 10px;
-}
-.pointer{
-  cursor: pointer;
-}
-label{
-  margin-left: 10px;
-}
-a.nav-link{
-  cursor: pointer;
-}
-.nav a:hover:not(.active) {
-  opacity: 0.5;
-}
-</style>

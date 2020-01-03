@@ -15,7 +15,8 @@
     "errorcode": "Error code",
     "authorizationerror": "Authorization Error",
     "nondicomfile": "Non DICOM file",
-    "unknownerror": "Unknown Error"
+    "unknownerror": "Unknown Error",
+    "reload": "Reload erroneous files"
   },
   "fr": {
     "filesSend": "{count} fichier a été envoyé | {count} fichier a été envoyé | {count} fichiers ont été envoyés",
@@ -32,7 +33,8 @@
     "errorcode": "Code d'erreur",
     "authorizationerror": "Erreur d'authorisation",
     "nondicomfile": "Fichier non DICOM",
-    "unknownerror": "Erreur inconnue"
+    "unknownerror": "Erreur inconnue",
+    "reload": "Recharger les fichiers erronés"
   }
 }
 </i18n>
@@ -60,8 +62,25 @@
           class="p-2"
         >
           <done-icon
+            v-if="error.length === 0"
             :height="'20'"
             :width="'20'"
+          />
+          <span
+            v-if="error.length > 0 && error.length < totalSize"
+          >
+            <v-icon
+              name="warning"
+              :height="'20'"
+              :width="'20'"
+              color="red"
+            />
+          </span>
+          <error-icon
+            v-if="error.length === totalSize && totalSize !== 0"
+            :height="'20'"
+            :width="'20'"
+            color="red"
           />
         </div>
         <div
@@ -70,7 +89,9 @@
         >
           <v-icon
             class="align-middle"
-            name="baidu"
+            name="warning"
+            :height="'20'"
+            :width="'20'"
           />
         </div>
         <div
@@ -92,12 +113,11 @@
             {{ $t("titleBoxDicomize") }}
           </span>
         </div>
+        <!--
         <div
           class="ml-auto p-1"
         >
-          <!--
             Reduce / Show icon
-          -->
           <button
             type="button"
             class="btn btn-link btn-sm"
@@ -121,11 +141,12 @@
             </span>
           </button>
         </div>
+        -->
         <!--
             Close icon
           -->
         <div
-          class="p-1"
+          class="ml-auto p-1"
         >
           <button
             type="button"
@@ -167,7 +188,7 @@
               :max="totalSize"
               show-progress
               animated
-              style="text-align:center"
+              class="text-center"
             >
               {{ countSentFiles }} / {{ totalSize }}
             </b-progress-bar>
@@ -176,8 +197,7 @@
             >
               <button
                 type="button"
-                class="btn btn-link btn-sm text-center"
-                style="color: red"
+                class="btn btn-link btn-sm text-center text-warning"
                 @click="setCancel()"
               >
                 <span>
@@ -209,19 +229,18 @@
           class="row"
         >
           <div
-            class="col-12 mt-2 mb-2"
+            class="col-11 mt-2 mb-2 ml-3"
           >
             {{ $tc("filesSend", countSentFiles - error.length - totalUnknownFilesError, {count: (countSentFiles - error.length - totalUnknownFilesError)}) }}
             {{ $tc("locationSend", sourceIsAlbum ? 0 : 1) }}
             <span
               v-if="sourceIsAlbum"
             >
-              <a
-                href="#"
-                @click="goToAlbum()"
+              <router-link
+                :to="{ name: 'album', params: { album_id: sourceSending.value }}"
               >
                 {{ $t("album") }}
-              </a>
+              </router-link>
             </span>
 
             <span
@@ -239,8 +258,10 @@
                 :key="item.key"
               >
                 {{ $tc("unknownError", item, {count: item }) }} <br>
-                <span style="color: red">
-                  {{ errorValues[key] }}
+                <span
+                  class="text-warning"
+                >
+                  {{ $t(errorValues[key]) }}
                 </span>
               </div>
             </div>
@@ -248,11 +269,25 @@
             <div
               v-if="error.length > 0"
             >
-              {{ $tc("filesErrors", error.length, {count: error.length}) }}
-              <button
-                type="button"
-                class="btn btn-link btn-sm text-center"
-                style="color: red"
+              <div
+                class="mb-1"
+              >
+                <span>
+                  {{ $tc("filesErrors", error.length, {count: error.length}) }}
+                </span>
+              </div>
+              <div
+                class="mb-1"
+              >
+                <a
+                  class="text-center text-neutral"
+                  @click="retry"
+                >
+                  {{ $t('reload') }}
+                </a>
+              </div>
+              <a
+                class="text-center text-warning"
                 @click="UI.showErrors=!UI.showErrors"
               >
                 <span v-if="!UI.showErrors">
@@ -266,7 +301,7 @@
                   :width="UI.SVGwidth"
                   color="red"
                 />
-              </button>
+              </a>
             </div>
           </div>
         </div>
@@ -304,17 +339,16 @@ import InputDicomize from '@/components/study/InputDicomize';
 import ErrorIcon from '@/components/kheopsSVG/ErrorIcon.vue';
 import BlockIcon from '@/components/kheopsSVG/BlockIcon';
 import CloseIcon from '@/components/kheopsSVG/CloseIcon';
-import AddIcon from '@/components/kheopsSVG/AddIcon';
-import RemoveIcon from '@/components/kheopsSVG/RemoveIcon';
 import DoneIcon from '@/components/kheopsSVG/DoneIcon';
 import { DicomOperations } from '@/mixins/dicomoperations';
+import { CurrentUser } from '@/mixins/currentuser.js';
 
 export default {
   name: 'SendStudies',
   components: {
-    ListErrorFiles, ErrorIcon, ClipLoader, BlockIcon, CloseIcon, AddIcon, RemoveIcon, DoneIcon, InputDicomize,
+    ListErrorFiles, ErrorIcon, ClipLoader, BlockIcon, CloseIcon, DoneIcon, InputDicomize,
   },
-  mixins: [DicomOperations],
+  mixins: [DicomOperations, CurrentUser],
   props: {
   },
   data() {
@@ -347,6 +381,7 @@ export default {
             'Content-Type': 'multipart/related; type="application/dicom+json"; boundary=myboundary',
           },
         },
+        headers: {},
       },
       errorValues: {
         292: 'authorizationerror',
@@ -373,14 +408,14 @@ export default {
       files: 'files',
       totalSize: 'totalSize',
       error: 'error',
-      source: 'source',
+      sourceSending: 'sourceSending',
       studyUIDToSend: 'studyUIDToSend',
     }),
     totalSizeFiles() {
       return this.copyFiles.reduce((total, file) => total + file.content.size, 0);
     },
     sourceIsAlbum() {
-      return (this.source !== 'inbox' && this.source !== undefined);
+      return (this.sourceSending.key !== 'inbox' && this.sourceSending !== undefined && Object.keys(this.sourceSending).length > 0);
     },
   },
   watch: {
@@ -403,8 +438,9 @@ export default {
   destroyed() {
   },
   methods: {
-    goToAlbum() {
-      this.$router.push(`/albums/${this.source}`);
+    retry() {
+      this.$store.dispatch('setSending', { sending: true });
+      this.$store.dispatch('setFiles', { files: this.error });
     },
     closeWindow() {
       this.UI.show = !this.UI.show;
@@ -455,23 +491,41 @@ export default {
         this.sendFormData(this.filesFiltered);
       }
     },
+    errorDicomize(file, err = undefined) {
+      const status = err !== undefined ? err.status : undefined;
+      this.generateErrorNonDicom([file], status);
+      this.$store.dispatch('removeFileId', { id: file.id });
+    },
     sendDicomizeFiles(files, dicomValue) {
-      files.forEach((file) => {
-        this.dicomize(this.studyUIDToSend, file, dicomValue[file.name]).then((res) => {
-          if (res !== -1) {
-            const data = res;
-            this.sendDicomizeDataPromise(file.id, data).then(() => {
-              this.$store.dispatch('removeFileId', { id: file.id });
-              this.countSentFiles += 1;
+      let promiseSequential = Promise.resolve();
+      this.config.dicomizeData.headers = { ...this.config.dicomizeData.headers, ...this.config.headers };
+      this.getStudy(this.studyUIDToSend).then((res) => {
+        const study = res.data[0];
+        files.forEach((file) => {
+          promiseSequential = promiseSequential.then(() => new Promise((resolve, reject) => {
+            this.dicomize(study, file, dicomValue[file.name]).then((resdicomize) => {
+              const data = resdicomize;
+              this.sendDicomizeDataPromise(file.id, data).then(() => {
+                this.$store.dispatch('removeFileId', { id: file.id });
+                this.countSentFiles += 1;
+                resolve({ id: file.id, data });
+              }).catch((err) => {
+                reject(err);
+              });
             }).catch((err) => {
-              this.generateErrorNonDicom([file], err.status);
-              this.$store.dispatch('removeFileId', { id: file.id });
-              this.countSentFiles += 1;
+              reject(err);
             });
-          } else {
-            this.$store.dispatch('removeFileId', { id: file.id });
+          })).catch((err) => {
+            console.log(err);
+            this.errorDicomize(file, err);
             this.countSentFiles += 1;
-          }
+          });
+        });
+      }).catch((err) => {
+        console.log(err);
+        files.forEach((file) => {
+          this.errorDicomize(file, err);
+          this.countSentFiles += 1;
         });
       });
     },
@@ -479,9 +533,7 @@ export default {
       return new Promise((resolve, reject) => {
         const formData = new FormData();
         formData.append(idFile, data);
-
-        const request = `/studies${this.sourceIsAlbum ? `?album=${this.source}` : ''}`;
-
+        const request = `/studies${this.sourceIsAlbum ? `?${this.sourceSending.key}=${this.sourceSending.value}` : ''}`;
         HTTP.post(request, data, this.config.dicomizeData).then((res) => {
           resolve(res);
         }).catch((err) => {
@@ -490,6 +542,7 @@ export default {
       });
     },
     sendFormData(files) {
+      this.config.formData.headers = { ...this.config.formData.headers, ...this.config.headers };
       if (this.maxsize > this.totalSizeFiles && files.length <= this.maxsend && files.length > 0) {
         this.sendFormDataPromise(files);
       } else if (files.length > 0) {
@@ -504,6 +557,9 @@ export default {
       this.progress = 0;
       this.listErrorUnknownFiles = {};
       this.totalUnknownFilesError = 0;
+      if (this.currentuserAccessToken() !== '') {
+        this.config.headers.Authorization = `Bearer ${this.currentuserAccessToken()}`;
+      }
 
       this.$store.dispatch('setSending', { sending: true });
       this.$store.dispatch('initErrorFiles');
@@ -544,7 +600,7 @@ export default {
         if (!this.UI.cancel && this.files.length > 0) {
           const formData = this.createFormData(files);
           this.currentFilesLength = files.length;
-          const request = `/studies${this.sourceIsAlbum ? `?album=${this.source}` : ''}`;
+          const request = `/studies${this.sourceIsAlbum ? `?${this.sourceSending.key}=${this.sourceSending.value}` : ''}`;
           HTTP.post(request, formData, this.config.formData).then((res) => {
             this.manageResult(files, res.data, res.status);
             resolve(res);
@@ -601,7 +657,7 @@ export default {
         const fileError = this.copyFiles.find((file) => file.id === id);
         if (fileError) {
           const textError = this.errorValues[errorCode] !== undefined ? this.$t(this.errorValues[errorCode]) : `${this.$t('errorcode')}: ${errorCode}`;
-          this.$store.dispatch('setErrorFiles', { error: this.createObjErrors(fileError.path, textError) });
+          this.$store.dispatch('setErrorFiles', { error: this.createObjErrors(fileError, textError) });
         }
       });
     },
@@ -629,11 +685,10 @@ export default {
       });
       return map;
     },
-    createObjErrors(id, value) {
-      return {
-        id,
-        value,
-      };
+    createObjErrors(file, value) {
+      const objError = file;
+      objError.value = value;
+      return objError;
     },
     setShowErrors(value) {
       this.UI.showErrors = value;
@@ -641,21 +696,3 @@ export default {
   },
 };
 </script>
-
-<style scoped>
-  .chat-popup {
-    position: fixed;
-    background: #303030;
-    bottom: 0;
-    right: 15px;
-    border: 3px solid #f1f1f1;
-    z-index: 9;
-    max-width: 300px;
-    opacity: 1;
-    display: block;
-  }
-  .closeBtn {
-    position: relative;
-    border-bottom: 1px solid #f1f1f1;
-  }
-</style>

@@ -7,13 +7,15 @@
     "addUser": "Invite a user",
     "addSeries": "Add studies / series",
     "downloadSeries": "Show download button",
-    "sendSeries": "Send to user / album",
+    "sendSeries": "Sharing",
     "deleteSeries": "Remove studies / series",
     "writeComments": "Write comments",
     "create": "Create",
     "cancel": "Cancel",
     "newalbum": "New album",
-    "usersettings": "Album user settings"
+    "usersettings": "Album user settings",
+    "authorizationerror": "You don't have the permissions to add the study {study}",
+    "studynotfound": "The study {study} is not found"
   },
   "fr": {
     "albumName": "Nom de l'album",
@@ -21,28 +23,32 @@
     "users": "Utilisateurs",
     "addUser": "Inviter un utilisateur",
     "addSeries": "Ajouter une étude / série",
-    "downloadSeries": "Télécharger une étude / série",
-    "sendSeries": "Ajouter à un album / inbox",
+    "downloadSeries": "Montrer le bouton de téléchargement",
+    "sendSeries": "Partager",
     "deleteSeries": "Supprimer une étude / série",
     "writeComments": "Commenter",
     "create": "Créer",
     "cancel": "Annuler",
     "newalbum": "Nouvel album",
-    "usersettings": "Réglages des utilisateurs de l'album"
+    "usersettings": "Réglages des utilisateurs de l'album",
+    "authorizationerror": "Vous n'avez pas les droits d'ajouter l'étude {study}",
+    "studynotfound": "l'étude {study} n'a pas été trouvée"
   }
 }
 </i18n>
 
 <template>
   <div class="container">
-    <h3>
+    <h3
+      class="newalbum-title"
+    >
       {{ displayName }}
     </h3>
     <form @submit.prevent="createAlbum">
       <fieldset>
         <div class="row">
           <div class="col-xs-12 col-sm-3">
-            <dt class="d-none d-sm-block">
+            <dt class="d-none d-sm-block edit-title">
               {{ $t('albumName') }}
             </dt>
             <b class="d-block d-sm-none">{{ $t('albumName') }}</b>
@@ -51,6 +57,7 @@
             <dd>
               <input
                 v-model="album.name"
+                v-focus
                 type="text"
                 :placeholder="$t('albumName')"
                 class="form-control"
@@ -61,7 +68,7 @@
         </div>
         <div class="row">
           <div class="col-xs-12 col-sm-3">
-            <dt class="d-none d-sm-block">
+            <dt class="d-none d-sm-block edit-title">
               {{ $t('albumDescription') }}
             </dt>
             <b class="d-block d-sm-none">{{ $t('albumDescription') }}</b>
@@ -80,7 +87,7 @@
         </div>
         <div class="row">
           <div class="col-xs-12 col-sm-3">
-            <dt class="d-none d-sm-block">
+            <dt class="d-none d-sm-block edit-title">
               {{ $t('users') }}
             </dt>
             <b class="d-block d-sm-none">{{ $t('users') }}</b>
@@ -89,23 +96,25 @@
             <dd>
               <h5
                 v-if="album.users.length > 0"
-                class="user"
+                class="newalbum-user"
               >
                 <span
                   v-for="user in album.users"
-                  :key="user.user_name"
+                  :key="user.email"
                   class="badge badge-secondary"
                 >
                   {{ user.email }}
                   <span
-                    class="icon pointer"
+                    class="pointer"
                     @click="deleteUser(user)"
                   >
                     <v-icon name="times" />
                   </span>
                 </span>
               </h5>
-              <h5 class="user">
+              <h5
+                class="newalbum-user"
+              >
                 <div class="input-group mb-3">
                   <input
                     v-model="newUserName"
@@ -133,25 +142,55 @@
         </div>
       </fieldset>
 
-      <fieldset class="user_settings">
-        <legend>{{ $t('usersettings') }}</legend>
-        <div
-          v-for="(value,label) in album.userSettings"
-          :key="label"
-          class="row form-group"
-          :class="(label==='sendSeries')?'offset-1':''"
-        >
-          <div>
-            <toggle-button
-              v-model="album.userSettings[label]"
-              :labels="{checked: 'Yes', unchecked: 'No'}"
-              :disabled="(!album.userSettings.downloadSeries && label=='sendSeries')"
-              :sync="true"
-            />
+      <div class="card user-settings">
+        <div class="container mb-3">
+          <div
+            class="bg-primary row"
+          >
+            <div class="col-xl-1" />
+            <div class="col-xl-11">
+              <h4
+                class="mt-3 mb-3 ml-2"
+              >
+                {{ $t('usersettings') }}
+              </h4>
+            </div>
           </div>
-          <label>{{ $t(label) }}</label>
+          <div
+            class="row toggle-padding mt-3"
+          >
+            <div class="col-xl-1" />
+            <div
+              v-for="(valuex, idx) in numberCol"
+              :key="idx"
+              class="col-md-12 col-lg-6 col-xl-5"
+            >
+              <span
+                v-for="(valuey,idy) in Object.entries(album.userSettings).slice((userSettingsLength/2)*(idx), (userSettingsLength/2)*valuex)"
+                :key="idy"
+              >
+                <div
+                  class="mt-2"
+                  :class="(valuey[0]=='sendSeries')?'offset-1':''"
+                >
+                  <toggle-button
+                    v-model="album.userSettings[valuey[0]]"
+                    :disabled="(!album.userSettings.downloadSeries && valuey[0]=='sendSeries')"
+                    :color="{checked: '#5fc04c', unchecked: 'grey'}"
+                    :sync="true"
+                  />
+                  <label
+                    class="user-settings ml-2 mt-2 word-break"
+                  >
+                    {{ $t(valuey[0]) }}
+                  </label>
+                </div>
+              </span>
+            </div>
+          </div>
         </div>
-      </fieldset>
+      </div>
+
       <fieldset>
         <div class="row">
           <div class="col-md-10 mt-1 d-none d-sm-none d-md-block">
@@ -218,15 +257,22 @@ export default {
         },
       },
       newUserName: '',
+      numberCol: 2,
     };
   },
   computed: {
     displayName() {
       return (!this.album.album_id) ? this.$t('newalbum') : this.album.name;
     },
+    userSettingsLength() {
+      return Object.keys(this.album.userSettings).length;
+    },
+    downloadSeries() {
+      return this.album.userSettings.downloadSeries;
+    },
   },
   watch: {
-    'album.userSettings.downloadSeries': function () {
+    downloadSeries() {
       if (!this.album.userSettings.downloadSeries) {
         this.album.userSettings.sendSeries = false;
       }
@@ -299,12 +345,27 @@ export default {
     putStudiesInAlbum(albumCreated, data) {
       let queries = {};
       queries = this.$route.query.source === 'inbox' ? { inbox: true } : { album: this.$route.query.source };
-      return this.$store.dispatch('putStudiesInAlbum', { queries, data });
+      return this.$store.dispatch('putStudiesInAlbum', { queries, data }).then((results) => {
+        results.forEach((result) => {
+          const { res } = result;
+          if (res.request !== undefined && res.request.status !== 201) {
+            const { studyId } = result;
+            if (res.request.status === 403) {
+              this.$snotify.error(this.$t('authorizationerror', { study: studyId }));
+            } else if (res.request.status === 404) {
+              this.$snotify.error(this.$t('studynotfound', { study: studyId }));
+            } else {
+              this.$snotify.error(this.$t('sorryerror'));
+            }
+          }
+        });
+      });
     },
     dataToUpload(albumId) {
       const data = [];
       if (this.$route.query && this.$route.query.StudyInstanceUID) {
-        this.$route.query.StudyInstanceUID.forEach((study) => {
+        const studies = Array.isArray(this.$route.query.StudyInstanceUID) ? this.$route.query.StudyInstanceUID : [this.$route.query.StudyInstanceUID];
+        studies.forEach((study) => {
           data.push({
             album_id: albumId,
             study_id: study,
@@ -312,7 +373,8 @@ export default {
         });
       }
       if (this.$route.query && this.$route.query.SeriesInstanceUID) {
-        this.$route.query.SeriesInstanceUID.forEach((serie) => {
+        const series = Array.isArray(this.$route.query.SeriesInstanceUID) ? this.$route.query.SeriesInstanceUID : [this.$route.query.SeriesInstanceUID];
+        series.forEach((serie) => {
           const infoSerie = serie.split(',');
           if (infoSerie.length === 2) {
             data.push({
@@ -329,37 +391,3 @@ export default {
 };
 
 </script>
-
-<style scoped>
-h3 {
-  margin-bottom: 40px;
-}
-
-h5.user{
-  float: left;
-  margin-right: 10px;
-}
-
-.icon{
-  margin-left: 10px;
-}
-.pointer{
-  cursor: pointer;
-}
-label{
-  margin-left: 10px;
-}
-fieldset.user_settings {
-  border: 1px solid #333;
-  padding: 20px;
-  background-color: #303030 ;
-}
-
-fieldset.user_settings legend{
-  padding: 0 20px;
-  width: auto;
-}
-dt{
-  text-align: right;
-}
-</style>

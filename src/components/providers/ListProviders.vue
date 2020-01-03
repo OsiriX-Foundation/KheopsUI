@@ -7,7 +7,8 @@
     "refresh": "Refresh",
     "created_time": "Created time",
     "name_provider": "Name of provider",
-    "url": "Configuration URL"
+    "url": "Configuration URL",
+    "noreports": "There are no report providers to show"
   },
   "fr": {
     "edit": "Editer",
@@ -16,7 +17,8 @@
     "refresh": "Rafraîchir",
     "created_time": "Date de création",
     "name_provider": "Nom du provider",
-    "url": "URL de configuration"
+    "url": "URL de configuration",
+    "noreports": "Aucun report provider créé"
   }
 }
 </i18n>
@@ -25,7 +27,7 @@
     <div class="d-flex">
       <div>
         <h4>
-          Report providers
+          Report Providers
         </h4>
       </div>
       <div class="ml-auto">
@@ -41,6 +43,7 @@
       stacked="sm"
       striped
       hover
+      show-empty
       :items="providers"
       :fields="fields"
       :sort-desc="true"
@@ -48,8 +51,7 @@
       @row-clicked="selectProvider"
     >
       <template
-        slot="url_check"
-        slot-scope="data"
+        v-slot:cell(url_check)="data"
       >
         <state-provider
           :loading="data.item.stateURL.loading"
@@ -59,8 +61,7 @@
       </template>
       <template
         v-if="writePermission"
-        slot="btn_edit"
-        slot-scope="data"
+        v-slot:cell(btn_edit)="data"
       >
         <button
           class="btn btn-sm btn-primary"
@@ -68,6 +69,20 @@
         >
           {{ $t('edit') }}
         </button>
+      </template>
+      <template v-slot:empty="scope">
+        <div
+          class="text-warning text-center"
+        >
+          {{ $t('noreports') }}
+        </div>
+      </template>
+      <template v-slot:emptyfiltered="scope">
+        <div
+          class="text-warning text-center"
+        >
+          {{ $t('noreports') }}
+        </div>
       </template>
     </b-table>
   </div>
@@ -94,33 +109,38 @@ export default {
   },
   data() {
     return {
-      fields: {
-        name: {
+      fields: [
+        {
+          key: 'name',
           label: this.$t('name_provider'),
           sortable: true,
-          tdClass: 'breakwork',
+          tdClass: 'word-break',
         },
-        url: {
+        {
+          key: 'url',
           label: this.$t('url'),
           sortable: true,
-          tdClass: 'breakwork',
+          tdClass: 'word-break',
           class: 'd-none d-sm-table-cell',
         },
-        created_time: {
+        {
+          key: 'created_time',
           label: this.$t('created_time'),
           sortable: true,
-          tdClass: 'breakwork',
+          tdClass: 'word-break',
           class: 'd-none d-md-table-cell',
         },
-        btn_edit: {
+        {
+          key: 'btn_edit',
           label: '',
           sortable: false,
         },
-        url_check: {
+        {
+          key: 'url_check',
           label: '',
           sortable: false,
         },
-      },
+      ],
     };
   },
   computed: {
@@ -156,10 +176,3 @@ export default {
   },
 };
 </script>
-
-<style>
-  .breakwork {
-    word-break: break-word;
-  }
-</style>
-

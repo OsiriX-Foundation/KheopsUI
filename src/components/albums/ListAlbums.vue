@@ -56,7 +56,7 @@
     />
     <b-table
       striped
-      hover
+      :hover="mobiledetect ? false : true"
       :items="albums"
       :fields="fields"
       :sort-desc="true"
@@ -70,8 +70,7 @@
       @row-unhovered="setItemUnhover"
     >
       <template
-        slot="HEAD_name"
-        slot-scope="data"
+        v-slot:head(name)="data"
       >
         <div
           v-if="showFilters"
@@ -92,8 +91,7 @@
         {{ data.label }}
       </template>
       <template
-        slot="HEAD_number_of_studies"
-        slot-scope="data"
+        v-slot:head(number_of_studies)="data"
       >
         <sort-list
           :sort-desc="albumsParams.sortDesc"
@@ -103,8 +101,7 @@
         {{ data.label }}
       </template>
       <template
-        slot="HEAD_number_of_users"
-        slot-scope="data"
+        v-slot:head(number_of_users)="data"
       >
         <sort-list
           :sort-desc="albumsParams.sortDesc"
@@ -114,8 +111,7 @@
         {{ data.label }}
       </template>
       <template
-        slot="HEAD_number_of_comments"
-        slot-scope="data"
+        v-slot:head(number_of_comments)="data"
       >
         <sort-list
           :sort-desc="albumsParams.sortDesc"
@@ -125,8 +121,7 @@
         {{ data.label }}
       </template>
       <template
-        slot="HEAD_created_time"
-        slot-scope="data"
+        v-slot:head(created_time)="data"
       >
         <div
           v-if="showFilters"
@@ -165,8 +160,7 @@
         {{ data.label }}
       </template>
       <template
-        slot="HEAD_last_event_time"
-        slot-scope="data"
+        v-slot:head(last_event_time)="data"
       >
         <div
           v-if="showFilters"
@@ -206,8 +200,7 @@
         {{ data.label }}
       </template>
       <template
-        slot="is_selected"
-        slot-scope="row"
+        v-slot:cell(is_selected)="row"
       >
         <b-button-group>
           <b-form-checkbox
@@ -219,8 +212,7 @@
         </b-button-group>
       </template>
       <template
-        slot="name"
-        slot-scope="row"
+        v-slot:cell(name)="row"
       >
         <div
           :class="'d-flex flex-wrap'"
@@ -230,25 +222,24 @@
           </div>
           <span
             class="ml-auto"
+            :class="row.item.flag.is_hover || mobiledetect || row.item.is_favorite ? 'iconsHover' : 'iconsUnhover'"
             @click.stop="toggleFavorite(row.item.album_id, row.item.is_favorite)"
           >
             <v-icon
               name="star"
-              :color="(!row.item.is_favorite) ? 'grey' : ''"
-              :class="row.item.flag.is_hover || mobiledetect || row.item.is_favorite ? 'iconsHover' : 'iconsUnhover'"
+              class="kheopsicon"
+              :class="(!row.item.is_favorite) ? '' : 'bg-neutral fill-neutral'"
             />
           </span>
         </div>
       </template>
       <template
-        slot="created_time"
-        slot-scope="data"
+        v-slot:cell(created_time)="data"
       >
         {{ data.item.created_time | formatDate }}
       </template>
       <template
-        slot="last_event_time"
-        slot-scope="data"
+        v-slot:cell(last_event_time)="data"
       >
         {{ data.item.last_event_time | formatDate }}
       </template>
@@ -314,7 +305,7 @@ export default {
           key: 'is_selected',
           label: '',
           sortable: false,
-          class: 'td_checkbox breakword',
+          class: 'td_checkbox_albums word-break',
           thStyle: {
             width: '100px',
           },
@@ -322,9 +313,10 @@ export default {
         {
           key: 'name',
           label: this.$t('name'),
+          thClass: 'pointer',
           tdClass: 'name',
           sortable: true,
-          class: 'breakword',
+          class: 'word-break',
           thStyle: {
             width: '250px',
           },
@@ -333,7 +325,8 @@ export default {
           key: 'number_of_studies',
           label: this.$t('Study #'),
           sortable: true,
-          class: 'd-none d-sm-table-cell breakword',
+          thClass: 'pointer',
+          class: 'd-none d-sm-table-cell word-break',
           thStyle: {
             width: '200px',
           },
@@ -342,7 +335,8 @@ export default {
           key: 'number_of_users',
           label: this.$t('User #'),
           sortable: true,
-          class: 'd-none d-md-table-cell breakword',
+          thClass: 'pointer',
+          class: 'd-none d-md-table-cell word-break',
           thStyle: {
             width: '200px',
           },
@@ -351,7 +345,8 @@ export default {
           key: 'number_of_comments',
           label: this.$t('Message #'),
           sortable: true,
-          class: 'd-none d-lg-table-cell breakword',
+          thClass: 'pointer',
+          class: 'd-none d-lg-table-cell word-break',
           thStyle: {
             width: '200px',
           },
@@ -360,7 +355,8 @@ export default {
           key: 'created_time',
           label: this.$t('Date'),
           sortable: true,
-          class: 'd-none d-sm-table-cell breakword',
+          thClass: 'pointer',
+          class: 'd-none d-sm-table-cell word-break',
           thStyle: {
             width: '200px',
           },
@@ -369,7 +365,8 @@ export default {
           key: 'last_event_time',
           label: this.$t('LastEvent'),
           sortable: true,
-          class: 'd-none d-lg-table-cell breakword',
+          thClass: 'pointer',
+          class: 'd-none d-lg-table-cell word-break',
           thStyle: {
             width: '200px',
           },
@@ -384,7 +381,7 @@ export default {
             }
             return this.$t('nomodality');
           },
-          class: 'breakword',
+          class: 'word-break',
           thStyle: {
             width: '200px',
           },
@@ -568,51 +565,3 @@ export default {
   },
 };
 </script>
-
-<style scoped>
-select{
-  display: inline !important;
-}
-.btn-link {
-  font-weight: 400;
-  color: white;
-  background-color: transparent;
-}
-
-.btn-link:hover {
-  color: #c7d1db;
-  text-decoration: underline;
-  background-color: transparent;
-  border-color: transparent;
-}
-
-.selection-button-container{
-  height: 60px;
-}
-
-.td_checkbox {
-  width: 150px;
-}
-
-input.search-calendar{
-  width: 100px !important;
-}
-
-div.calendar-wrapper{
-  color: #333;
-}
-
-.breakword {
-  word-break: break-word;
-}
-.iconsHover{
-  visibility: visible;
-  display: inline;
-  cursor: pointer;
-}
-.iconsUnhover{
-  visibility: hidden;
-  display: inline;
-  cursor: pointer;
-}
-</style>

@@ -45,7 +45,7 @@ Props :
     >
       <div class="col-lg-4 d-none d-sm-none d-md-block" />
       <div
-        class="col-lg-8 d-none d-sm-none d-md-block"
+        class="btnalbum col-lg-8 d-none d-sm-none d-md-block"
         align="right"
       >
         <p v-if="confirmQuit && !lastAdmin && !lastUser">
@@ -56,7 +56,7 @@ Props :
         </p>
       </div>
       <div
-        class="d-md-none"
+        class="btnalbum d-md-none"
       >
         <p v-if="confirmQuit && !lastAdmin && !lastUser">
           {{ $t("quitalbum") }}
@@ -75,7 +75,7 @@ Props :
         class="col-12"
       >
         <p
-          style="color:red;"
+          class="text-warning"
         >
           {{ $t('lastadmin') }}
         </p>
@@ -197,14 +197,15 @@ export default {
   },
   computed: {
     lastAdmin() {
-      const last = this.users.filter((user) => user.is_admin && user.user_name !== this.currentuserEmail);
-      return !(last.length > 0);
+      const last = this.users.filter((user) => user.is_admin && user.email !== this.currentuserEmail);
+      const currentUserAdmin = this.users.filter((user) => user.is_admin && user.email === this.currentuserEmail);
+      return (!(last.length > 0) && currentUserAdmin.length > 0);
     },
     lastUser() {
       return !(this.users.length > 1);
     },
     listUsers() {
-      return this.users.filter((user) => user.user_name !== this.currentuserEmail);
+      return this.users.filter((user) => user.email !== this.currentuserEmail);
     },
   },
   methods: {
@@ -213,7 +214,6 @@ export default {
         this.confirmDeletion = true;
       } else {
         this.$store.dispatch('deleteAlbum', { album_id: this.album.album_id }).then(() => {
-          this.$snotify.success(this.$t('albumdeletesuccess'));
           this.$router.push('/albums');
         }).catch(() => {
           this.$snotify.error(this.$t('sorryerror'));
@@ -225,7 +225,6 @@ export default {
         this.confirmQuit = true;
       } else {
         this.$store.dispatch('removeAlbumUser', { album_id: this.album.album_id, user: this.currentuserSub }).then(() => {
-          this.$snotify.success(this.$t('albumquitsuccess'));
           this.$router.push('/albums');
         }).catch(() => {
           this.$snotify.error(this.$t('sorryerror'));
@@ -235,10 +234,3 @@ export default {
   },
 };
 </script>
-
-<style scoped>
-.btnalbum{
-  padding: 10px;
-}
-
-</style>

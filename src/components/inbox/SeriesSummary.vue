@@ -23,90 +23,52 @@
 <template>
   <div class="seriesSummaryContainer">
     <div class="row justify-content-center">
-      <div class="mb-2">
-        <b-form-checkbox
-          v-model="isSelected"
-        >
-          <span
-            v-if="serie.SeriesDescription && serie.SeriesDescription.Value"
-          >
-            {{ serie.SeriesDescription.Value[0] }}
-          </span>
-          <span
-            v-else
-          >
-            No description
-          </span>
-        </b-form-checkbox>
-      </div>
-    </div>
-
-    <div class="row justify-content-center">
       <div class="mb-2 preview">
         <div
-          class="d-flex flex-row justify-content-center align-items-center"
-          style="height: 100%;"
+          class="d-flex flex-row justify-content-center"
         >
-          <div class="p-2">
-            <img
-              v-if="!loadingImage"
-              :class="!serie.Modality.Value[0].includes('SR') ? 'cursor-img' : ''"
-              :src="serie.imgSrc"
-              width="250"
-              height="250"
-              @click="openTab(serie)"
-            >
-            <bounce-loader
-              :loading="loadingImage"
-              color="white"
-            />
-          </div>
+          <img
+            v-if="!loadingImage"
+            :class="checkSR ? 'pointer' : ''"
+            :src="serie.imgSrc"
+            width="150"
+            height="150"
+            @click="checkSR ? openTab(serie) : ''"
+          >
+          <bounce-loader
+            :loading="loadingImage"
+            color="white"
+          />
         </div>
       </div>
-      <div class="col col-mb-2 col-sm-10 col-md-8 col-lg-6 description">
-        <table class="table table-striped">
-          <tbody>
-            <tr v-if="serie.Modality && serie.Modality.Value !== undefined">
-              <th>{{ $t('modality') }}</th>
-              <td>{{ serie.Modality.Value[0] }}</td>
-            </tr>
-            <tr v-if="serie.RetrieveAETitle && serie.RetrieveAETitle.Value !== undefined">
-              <th>{{ $t('applicationentity') }}</th>
-              <td>{{ serie.RetrieveAETitle.Value[0] }}</td>
-            </tr>
-            <tr v-if="serie.NumberOfSeriesRelatedInstances && serie.NumberOfSeriesRelatedInstances.Value !== undefined">
-              <th>{{ $t('numberimages') }}</th>
-              <td>{{ serie.NumberOfSeriesRelatedInstances.Value[0] }}</td>
-            </tr>
-            <tr v-if="serie.SeriesDescription && serie.SeriesDescription.Value !== undefined">
-              <th>{{ $t('description') }}</th>
-              <td>{{ serie.SeriesDescription.Value[0] }}</td>
-            </tr>
-            <tr v-if="serie.SeriesDate && serie.SeriesDate.Value !== undefined">
-              <th>{{ $t('seriesdate') }}</th>
-              <td>{{ serie.SeriesDate.Value[0]|formatDate }}</td>
-            </tr>
-            <tr v-if="serie.SeriesTime && serie.SeriesTime.Value !== undefined">
-              <th>{{ $t('seriestime') }}</th>
-              <td>{{ serie.SeriesTime.Value[0] }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+    </div>
+    <div class="row mb-2 ml-2">
+      <b-form-checkbox
+        v-model="isSelected"
+      >
+        <span
+          class="pointer word-break font-white"
+        >
+          {{ imageTitle }}  <br>
+          {{ serieDate }}
+        </span>
+      </b-form-checkbox>
     </div>
   </div>
 </template>
 
 <script>
+import Vue from 'vue';
 import { mapGetters } from 'vuex';
 import BounceLoader from 'vue-spinner/src/BounceLoader.vue';
 import { ViewerToken } from '../../mixins/tokens.js';
 import { CurrentUser } from '../../mixins/currentuser.js';
+import { Viewer } from '@/mixins/viewer.js';
 
 export default {
   name: 'SeriesSummary',
   components: { BounceLoader },
-  mixins: [ViewerToken, CurrentUser],
+  mixins: [ViewerToken, CurrentUser, Viewer],
   props: {
     serie: {
       type: Object,
@@ -132,6 +94,38 @@ export default {
       studies: 'studies',
       series: 'series',
     }),
+    checkSR() {
+      if (this.serie.Modality !== undefined && this.serie.Modality.Value !== undefined) {
+        return !this.serie.Modality.Value[0].includes('SR');
+      }
+      return true;
+    },
+    imageTitle() {
+      let modality = '';
+      let description = '';
+      let numberInstances = '';
+      if (this.serie.Modality !== undefined && this.serie.Modality.Value !== undefined) {
+        [modality] = this.serie.Modality.Value;
+      }
+      if (this.serie.NumberOfSeriesRelatedInstances !== undefined && this.serie.NumberOfSeriesRelatedInstances.Value !== undefined) {
+        numberInstances = `[ ${this.serie.NumberOfSeriesRelatedInstances.Value[0]} ]`;
+      }
+      if (this.serie.SeriesDescription !== undefined && this.serie.SeriesDescription.Value !== undefined) {
+        [description] = this.serie.SeriesDescription.Value;
+      }
+      return `${modality} - ${description} ${numberInstances}`;
+    },
+    serieDate() {
+      let seriesDate = '';
+      let seriesTime = '';
+      if (this.serie.SeriesDate && this.serie.SeriesDate.Value !== undefined) {
+        seriesDate = Vue.options.filters.formatDate(this.serie.SeriesDate.Value[0]);
+      }
+      if (this.serie.SeriesTime && this.serie.SeriesTime.Value !== undefined) {
+        seriesTime = Vue.options.filters.formatTM(this.serie.SeriesTime.Value[0]);
+      }
+      return `${seriesDate} ${seriesTime}`;
+    },
     seriesInstanceUID() {
       return this.serie.SeriesInstanceUID.Value[0];
     },
@@ -226,30 +220,47 @@ export default {
       });
       return allSelected;
     },
+    getSourceQueries() {
+      if (Object.keys(this.source).length > 0) {
+        return `${encodeURIComponent(this.source.key)}=${encodeURIComponent(this.source.value)}`;
+      }
+      return '';
+    },
     openTab(series) {
       const SOPVideo = '1.2.840.10008.5.1.4.1.1.77.1.4.1';
       const SOPPdf = '1.2.840.10008.5.1.4.1.1.104.1';
+      const token = this.currentuserAccessToken();
+      const openWSI = series.Modality !== undefined
+        && series.Modality.Value !== undefined
+        && series.Modality.Value[0] === 'SM';
+      const windowProps = {};
       if (series.SOPClassUID !== undefined && (series.SOPClassUID.Value[0] === SOPPdf || series.SOPClassUID.Value[0] === SOPVideo)) {
-        const contentType = series.SOPClassUID.Value[0] === SOPPdf ? 'application/pdf' : 'video/mp4';
-        this.openWADO(series, contentType);
-      } else if (series.Modality.Value[0] !== 'SR') {
-        this.openViewer();
+        windowProps.name = `WADO-${this.seriesInstanceUID}`;
+        windowProps.id = 'WADO';
+      } else if (openWSI) {
+        windowProps.name = `WSI-${this.studyInstanceUID}`;
+        windowProps.id = 'WSI';
+      } else if (this.checkSR) {
+        windowProps.name = `OHIF-${this.studyInstanceUID}`;
+        windowProps.id = 'OHIF';
       }
-    },
-    openViewer() {
-      const ohifWindow = window.open('', 'OHIFViewer');
-      this.getViewerToken(this.currentuserAccessToken, this.studyInstanceUID, this.source).then((res) => {
-        const url = `${process.env.VUE_APP_URL_API}/studies/${this.studyInstanceUID}/ohifmetadata?firstseries=${this.seriesInstanceUID}`;
-        ohifWindow.location.href = `${process.env.VUE_APP_URL_VIEWER}/?url=${encodeURIComponent(url)}#token=${res.data.access_token}`;
-      }).catch((err) => {
-        console.log(err);
-      });
-    },
-    openWADO(series, contentType) {
-      const wadoWindow = window.open('', 'WADO');
-      this.getViewerToken(this.currentuserAccessToken, this.studyInstanceUID, this.source).then((res) => {
-        const queryparams = `?studyUID=${this.studyInstanceUID}&seriesUID=${this.seriesInstanceUID}&requestType=WADO&contentType=${contentType}`;
-        wadoWindow.location.href = `${process.env.VUE_APP_URL_API}/link/${res.data.access_token}/wado${queryparams}`;
+      const openWindow = window.open('', windowProps.name);
+      this.getViewerToken(token, this.studyInstanceUID, this.source).then((res) => {
+        const viewerToken = res.data.access_token;
+        let url = '';
+        if (windowProps.id === 'WADO') {
+          const contentType = series.SOPClassUID.Value[0] === SOPPdf ? 'application/pdf' : 'video/mp4';
+          const queryparams = `?studyUID=${this.studyInstanceUID}&seriesUID=${this.seriesInstanceUID}&requestType=WADO&contentType=${contentType}`;
+          url = this.openWADO(this.studyInstanceUID, viewerToken, queryparams);
+          openWindow.location.href = url;
+        } else if (windowProps.id === 'WSI') {
+          url = this.openWSI(this.studyInstanceUID, viewerToken);
+          openWindow.location.href = url;
+        } else if (windowProps.id === 'OHIF') {
+          const sourceQuery = this.getSourceQueries();
+          url = this.openOhif(this.studyInstanceUID, viewerToken, sourceQuery);
+          openWindow.location.href = url;
+        }
       }).catch((err) => {
         console.log(err);
       });
@@ -258,22 +269,3 @@ export default {
 };
 
 </script>
-
-<style scoped>
-div.preview{
-  width: 290px;
-  padding: 0 20px;
-  float: left;
-}
-div.seriesSummaryContainer{
-  font-size: 90%;
-  line-height: 1.5em;
-}
-label{
-  font-size: 130%;
-}
-.cursor-img{
-  cursor: pointer;
-}
-
-</style>

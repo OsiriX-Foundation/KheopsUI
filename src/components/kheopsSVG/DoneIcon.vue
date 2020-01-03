@@ -3,7 +3,7 @@
     xmlns="http://www.w3.org/2000/svg"
     :width="width"
     :height="height"
-    class="icon"
+    class="kheopsicon-success"
     viewBox="0 0 24 24"
   >
     <path
@@ -19,7 +19,7 @@
 <script>
 
 export default {
-  name: 'AddIcon',
+  name: 'DoneIcon',
   props: {
     width: {
       type: String,
@@ -34,8 +34,3 @@ export default {
   },
 };
 </script>
-<style scoped>
-  .icon{
-    fill: green;
-  }
-</style>

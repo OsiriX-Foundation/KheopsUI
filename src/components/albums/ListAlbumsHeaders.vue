@@ -11,71 +11,73 @@
 }
 </i18n>
 <template>
-  <div
-    class="d-flex"
-  >
+  <div>
     <div
-      class="p-2"
+      class="pt-2"
     >
-      <h3>
-        <router-link
-          to="albums/new"
-          active-class="active"
-          style="display: inline; color: white"
+      <div
+        class="d-flex flex-wrap"
+      >
+        <div class="p-2 align-self-center d-none d-sm-block">
+          <button
+            class="btn btn-secondary ml-2"
+            @click="goNewAlbum"
+          >
+            <v-icon
+              name="plus"
+              class="mr-2"
+            />
+            {{ $t('newalbum') }}
+          </button>
+        </div>
+        <div
+          class="align-self-center"
         >
-          <v-icon
-            name="plus"
-            class="mr-2"
-          />{{ $t('newalbum') }}
-        </router-link>
-      </h3>
-    </div>
-    <div
-      class="p-2"
-    >
-      <button
-        type="button"
-        class="btn btn-link btn-sm text-center"
-        style="display: inline; color: white"
-        :disabled="disabledBtnShare"
-        @click="inviteClick"
-      >
-        <span>
-          <v-icon
-            name="user-plus"
-            scale="1.5"
-          />
-        </span><br>
-        {{ $t("share") }}
-      </button>
-    </div>
-    <div class="ml-auto" />
-    <div
-      class="d-none d-sm-block align-self-center"
-    >
-      <button
-        type="button"
-        class=" btn btn-link btn-lg"
-        @click="reloadAlbums()"
-      >
-        <v-icon
-          name="refresh"
-          scale="2"
-        />
-      </button>
-    </div>
-    <div>
-      <button
-        type="button"
-        class="btn btn-link btn-lg"
-        style="display: inline; color: white"
-        @click="searchClick"
-      >
-        <v-icon
-          name="search"
-          scale="2"
-        />
-      </button>
+          <button
+            type="button"
+            class="btn btn-link btn-sm text-center inline-white"
+            :disabled="disabledBtnShare"
+            @click="inviteClick"
+          >
+            <span>
+              <v-icon
+                name="user-plus"
+                scale="1.5"
+              />
+            </span><br>
+            {{ $t("share") }}
+          </button>
+        </div>
+        <div class="ml-auto" />
+        <div
+          class="align-self-center"
+        >
+          <button
+            type="button"
+            class="btn btn-link kheopsicon"
+            @click="reloadAlbums()"
+          >
+            <v-icon
+              name="refresh"
+              scale="2"
+            />
+          </button>
+        </div>
+        <div
+          class="align-self-center"
+        >
+          <button
+            type="button"
+            class="btn btn-link kheopsicon"
+            @click="searchClick"
+          >
+            <v-icon
+              name="search"
+              scale="1.8"
+            />
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -105,21 +107,10 @@ export default {
     reloadAlbums() {
       this.$emit('reloadAlbums');
     },
+    goNewAlbum() {
+      this.$router.push('/albums/new');
+    },
   },
 };
 
 </script>
-<style scoped>
-.btn-link {
-  font-weight: 400;
-  color: white;
-  background-color: transparent;
-}
-
-.btn-link:hover {
-  color: #c7d1db;
-  text-decoration: underline;
-  background-color: transparent;
-  border-color: transparent;
-}
-</style>

@@ -12,7 +12,7 @@
     "PatientName": "Patient Name",
     "Modality": "Modality",
     "StudyDate": "Study Date",
-    "StudyDescription": "Study description",
+    "StudyDescription": "Study Description",
     "PatientID": "Patient ID",
     "filter": "Filter",
     "fromDate": "From",
@@ -100,6 +100,7 @@
       @change="inputLoadDirectories"
     >
     <list-headers
+      :id="headerID"
       :studies="studies"
       :albums="albums"
       :show-send-button="permissions.send_series"
@@ -108,13 +109,13 @@
       :show-delete-button="permissions.delete_series"
       :show-import-button="permissions.add_series"
       :show-inbox-button="permissions.add_inbox"
-      :album-id="source.key === 'album' ? source.value : ''"
+      :album-id="albumID"
       @setFilters="changeFilterValue"
       @reloadStudies="reloadStudies"
     />
     <div
-      id="myHeader"
-      ref="myHeader"
+      id="stickyHeader"
+      ref="stickyHeader"
       :class="isActive ? 'pt-2 sticky' : ''"
     >
       <list-headers
@@ -138,13 +139,13 @@
       <b-table
         class="container-fluid"
         striped
-        hover
+        :hover="mobiledetect ? false : true"
         :items="studies"
         :fields="fields"
         :sort-desc="true"
         :no-local-sorting="true"
         :no-sort-reset="true"
-        :tbody-class="'table-wrapper-scroll-y link'"
+        :tbody-class="'link'"
         @sort-changed="sortingChanged"
         @row-hovered="setItemHover"
         @row-unhovered="setItemUnhover"
@@ -161,19 +162,39 @@
           HEADER TABLE
         -->
         <template
-          slot="HEAD_PatientName"
-          slot-scope="data"
+          v-slot:head(PatientName)="data"
         >
           <div
             v-if="showFilters"
             @click.stop=""
           >
-            <input
-              v-model="filters.PatientName"
-              type="search"
-              class="form-control form-control-sm"
-              :placeholder="$t('filter')"
-            > <br>
+            <div class="d-flex">
+              <div class="flex-fill">
+                <input
+                  v-model="filters.PatientName"
+                  type="search"
+                  class="form-control form-control-sm"
+                  :placeholder="$t('filter')"
+                >
+              </div>
+              <span>
+                <select
+                  v-model="filters.ModalitiesInStudy"
+                  class="form-control form-control-sm d-block d-sm-none"
+                  :placeholder="$t('filter')"
+                >
+                  <option value="" />
+                  <option
+                    v-for="modality in modalities"
+                    :key="modality.id"
+                    :value="modality"
+                  >
+                    {{ modality }}
+                  </option>
+                </select>
+              </span>
+            </div>
+            <br>
           </div>
           <sort-list
             :sort-desc="studiesParams.sortDesc"
@@ -184,8 +205,7 @@
         </template>
 
         <template
-          slot="HEAD_PatientID"
-          slot-scope="data"
+          v-slot:head(PatientID)="data"
         >
           <div
             v-if="showFilters"
@@ -207,8 +227,7 @@
         </template>
 
         <template
-          slot="HEAD_StudyDescription"
-          slot-scope="data"
+          v-slot:head(StudyDescription)="data"
         >
           <div
             v-if="showFilters"
@@ -225,8 +244,7 @@
         </template>
 
         <template
-          slot="HEAD_StudyDate"
-          slot-scope="data"
+          v-slot:head(StudyDate)="data"
         >
           <div
             v-if="showFilters"
@@ -273,8 +291,7 @@
         </template>
 
         <template
-          slot="HEAD_ModalitiesInStudy"
-          slot-scope="data"
+          v-slot:head(ModalitiesInStudy)="data"
         >
           <div
             v-if="showFilters"
@@ -282,7 +299,7 @@
           >
             <select
               v-model="filters.ModalitiesInStudy"
-              class="form-control form-control-sm"
+              class="form-control form-control-sm display-inline"
             >
               <option value="" />
               <option
@@ -302,8 +319,7 @@
           CONTENT TABLE
         -->
         <template
-          slot="is_selected"
-          slot-scope="row"
+          v-slot:cell(is_selected)="row"
         >
           <b-button-group>
             <b-button
@@ -328,19 +344,20 @@
           </b-button-group>
         </template>
         <template
-          slot="PatientName"
-          slot-scope="row"
+          v-slot:cell(PatientName)="row"
         >
           <div
             :class="mobiledetect===true ? '' : 'd-flex flex-wrap'"
           >
             <div class="">
               {{ row.value["Alphabetic"] }} {{ row.value["Ideographic"] }}
+              <span
+                class="d-block d-sm-none"
+              >
+                {{ row.item.ModalitiesInStudy !== undefined ? row.item.ModalitiesInStudy.Value.join(', ') : '' }}
+              </span>
             </div>
             <div :class="mobiledetect===true ? '' : 'ml-auto'">
-              <!--
-        :show-favorite-icon="permissions.add_series"
-      -->
               <list-icons
                 :study="row.item"
                 :mobiledetect="mobiledetect"
@@ -349,6 +366,7 @@
                 :show-download-icon="permissions.download_series"
                 :show-import-icon="permissions.add_series"
                 :show-report-provider-icon="source.key === 'album' ? true : false"
+                :show-weasis-icon="!mobiledetect"
                 :album-id="source.key === 'album' ? source.value : ''"
                 :source="source"
               >
@@ -366,8 +384,7 @@
           </div>
         </template>
         <template
-          slot="StudyDate"
-          slot-scope="row"
+          v-slot:cell(StudyDate)="row"
         >
           {{ row.value | formatDate }}
         </template>
@@ -376,7 +393,9 @@
           slot="row-details"
           slot-scope="row"
         >
-          <b-card>
+          <b-card
+            class="pointer-default"
+          >
             <list-item-details
               :study-u-i-d="row.item.StudyInstanceUID.Value[0]"
               :album-id="albumID"
@@ -438,23 +457,25 @@ import ListItemDetails from '@/components/inbox/ListItemDetails.vue';
 import mobiledetect from '@/mixins/mobiledetect.js';
 import SortList from '@/components/inbox/SortList.vue';
 import IconListProviders from '@/components/providers/IconListProviders.vue';
+import { CurrentUser } from '@/mixins/currentuser.js';
+import { filter } from 'minimatch';
 
 export default {
   name: 'Studies',
   components: {
     ListHeaders, ListIcons, ListItemDetails, InfiniteLoading, Datepicker, SortList, IconListProviders, PulseLoader,
   },
-  mixins: [],
+  mixins: [CurrentUser],
   props: {
     permissions: {
       type: Object,
       required: true,
       default: () => ({}),
     },
-    source: {
-      type: Object,
-      required: true,
-      default: () => ({}),
+    albumID: {
+      type: String,
+      required: false,
+      default: undefined,
     },
   },
   data() {
@@ -465,26 +486,29 @@ export default {
       isActive: false,
       showIcons: false,
       statusList: 200,
+      headerID: 'listheaders',
       studiesParams: {
         offset: 0,
         limit: 50,
         sortDesc: true,
         sortBy: 'StudyDate',
       },
-      fields: {
-        isSelected: {
+      fields: [
+        {
           key: 'is_selected',
           label: '',
           sortable: false,
-          class: ['td_checkbox', 'breakword'],
+          class: ['td_checkbox_inbox', 'word-break'],
           thStyle: {
             width: '100px',
           },
         },
-        PatientName: {
+        {
+          key: 'PatientName',
           label: this.$t('PatientName'),
           sortable: true,
-          tdClass: 'breakwork',
+          thClass: 'pointer',
+          tdClass: 'word-break',
           formatter: (value) => {
             if (value !== null && value.Value !== undefined) {
               return value.Value[0];
@@ -495,21 +519,29 @@ export default {
             width: '250px',
           },
         },
-        PatientID: {
+        {
+          key: 'PatientID',
           label: this.$t('PatientID'),
           sortable: true,
-          tdClass: 'breakwork',
-          class: 'breakword d-none d-md-table-cell d-lg-table-cell',
-          formatter: (value) => value.Value[0],
+          thClass: 'pointer',
+          tdClass: 'word-break',
+          class: 'word-break d-none d-md-table-cell d-lg-table-cell',
+          formatter: (value) => {
+            if (value !== null && value.Value !== undefined) {
+              return value.Value[0];
+            }
+            return '';
+          },
           thStyle: {
             width: '250px',
           },
         },
-        StudyDescription: {
+        {
+          key: 'StudyDescription',
           label: this.$t('StudyDescription'),
           sortable: false,
-          tdClass: 'breakwork',
-          class: 'breakword d-none d-lg-table-cell',
+          tdClass: 'word-break',
+          class: 'word-break d-none d-lg-table-cell',
           formatter: (value) => {
             if (value !== null && value.Value !== undefined) {
               return value.Value[0];
@@ -520,11 +552,13 @@ export default {
             width: '400px',
           },
         },
-        StudyDate: {
+        {
+          key: 'StudyDate',
           label: this.$t('StudyDate'),
           sortable: true,
-          tdClass: 'breakwork',
-          class: 'breakword d-none d-sm-table-cell d-md-table-cell d-lg-table-cell',
+          thClass: 'pointer',
+          tdClass: 'word-break',
+          class: 'word-break d-none d-sm-table-cell d-md-table-cell d-lg-table-cell',
           formatter: (value) => {
             if (value !== null && value.Value !== undefined) {
               return value.Value[0];
@@ -535,17 +569,23 @@ export default {
             width: '150px',
           },
         },
-        ModalitiesInStudy: {
+        {
+          key: 'ModalitiesInStudy',
           label: this.$t('Modality'),
           sortable: false,
-          tdClass: 'breakwork',
-          class: 'breakword d-none d-sm-table-cell',
-          formatter: (value) => value.Value.join(', '),
+          tdClass: 'word-break',
+          class: 'word-break d-none d-sm-table-cell',
+          formatter: (value) => {
+            if (value !== null && value.Value !== undefined) {
+              return value.Value.join(', ');
+            }
+            return '';
+          },
           thStyle: {
             width: '150px',
           },
         },
-      },
+      ],
       filters: {
         PatientName: '',
         PatientID: '',
@@ -564,6 +604,7 @@ export default {
       sendingFiles: 'sending',
       providers: 'providers',
       modalities: 'modalities',
+      source: 'source',
     }),
     OS() {
       return navigator.platform;
@@ -582,12 +623,6 @@ export default {
     mobiledetect() {
       return mobiledetect.mobileAndTabletcheck();
     },
-    albumID() {
-      if (this.source.key === 'album') {
-        return this.source.value;
-      }
-      return undefined;
-    },
     providersEnable() {
       return this.providers.filter((provider) => provider.stateURL.checkURL === true);
     },
@@ -601,6 +636,7 @@ export default {
     },
     filters: {
       handler() {
+        // const noFiltersSet = Object.values(this.filters).every((filterValue) => filterValue === '');
         this.searchStudies();
       },
       deep: true,
@@ -622,16 +658,9 @@ export default {
   },
   created() {
     this.initData();
-    if (Object.keys(this.source).length > 0) {
-      const queriesAlbums = {
-        canAddSeries: true,
-      };
-      this.$store.dispatch('getAlbums', { queries: queriesAlbums });
-      this.setAlbumInbox();
-    } else {
-      const modalities = ['CT', 'SM', 'CR', 'RG', 'DX', 'NM', 'XC', 'AU', 'SR', 'OP'];
-      this.$store.commit('SET_MODALITIES', modalities);
-    }
+    this.setAlbumsList();
+    this.setAlbumInbox();
+    this.setFilters();
   },
   destroyed() {
     this.$store.dispatch('initStudies', {});
@@ -642,15 +671,41 @@ export default {
     this.scroll();
   },
   methods: {
+    setFilters() {
+      let filterValue = false;
+
+      Object.keys(this.$route.query).forEach((key) => {
+        const value = decodeURIComponent(Array.isArray(this.$route.query[key]) ? this.$route.query[key][0] : this.$route.query[key]);
+        if (this.filters[key] !== undefined && key !== 'StudyDateFrom' && key !== 'StudyDateTo') {
+          this.filters[key] = value;
+          filterValue = true;
+        }
+        if (key === 'StudyDate') {
+          let date = [];
+          if (value.includes('-')) {
+            date = value.split('-');
+          } else {
+            date.push(value);
+            date.push(value);
+          }
+          this.filters.StudyDateFrom = this.dateFormatter(date[0]);
+          this.filters.StudyDateTo = this.dateFormatter(date[1]);
+          filterValue = true;
+        }
+      });
+      if (filterValue === true) {
+        this.changeFilterValue();
+      }
+    },
     scroll() {
       window.onscroll = () => {
-        if (this.$refs.myHeader !== undefined && this.$refs.studiesList !== undefined) {
-          const sticky = this.$refs.myHeader.offsetTop;
-          const heightSticky = this.$refs.myHeader.clientHeight;
+        if (this.$refs.stickyHeader !== undefined && this.$refs.studiesList !== undefined) {
+          const sticky = this.$refs.stickyHeader.offsetTop;
+          const heightSticky = this.$refs.stickyHeader.clientHeight;
           const studiesList = this.$refs.studiesList.offsetTop;
           if ((window.pageYOffset) > sticky - heightSticky && !this.isActive) {
             this.isActive = true;
-          } else if (window.pageYOffset < studiesList - heightSticky) {
+          } else if ((window.pageYOffset < studiesList - heightSticky) && this.isActive) {
             this.isActive = false;
           }
         }
@@ -687,14 +742,12 @@ export default {
     },
     reloadStudies() {
       this.searchStudies();
-      if (Object.keys(this.source).length > 0) {
-        if (this.albumID !== undefined) {
-          this.getAlbum().then(() => {
-            this.setAlbumInbox();
-          });
-        } else {
+      if (this.albumID !== undefined) {
+        this.getAlbum().then(() => {
           this.setAlbumInbox();
-        }
+        });
+      } else {
+        this.setAlbumInbox();
       }
     },
     getAlbum() {
@@ -703,9 +756,22 @@ export default {
         return err;
       });
     },
+    setAlbumsList() {
+      if (this.currentuserKeycloakToken !== null) {
+        const queriesAlbums = {
+          canAddSeries: true,
+        };
+        const headers = {
+          Authorization: `Bearer ${this.currentuserKeycloakToken}`,
+        };
+        this.$store.dispatch('getAlbums', { queries: queriesAlbums, headers });
+      }
+    },
     setAlbumInbox() {
       if (this.albumID !== undefined) {
-        this.$store.dispatch('getProviders', { albumID: this.albumID });
+        if (!this.currentuserOnView) {
+          this.$store.dispatch('getProviders', { albumID: this.albumID });
+        }
         this.$store.dispatch('setModalitiesAlbum');
       } else {
         this.$store.dispatch('getInboxInfo');
@@ -778,10 +844,11 @@ export default {
       const params = {
         limit,
         offset,
-        includefield: ['favorite', 'comments', '00081030'],
+        includefield: ['comments', '00081030'],
         sort: (this.studiesParams.sortDesc ? '-' : '') + this.studiesParams.sortBy,
       };
       if (Object.keys(this.source).length > 0) {
+        params.includefield.push('favorite');
         params[this.source.key] = this.source.value;
       }
       const queries = Object.assign(params, this.prepareFilters());
@@ -821,11 +888,24 @@ export default {
     transformDate(date) {
       return moment(date).format('YYYYMMDD');
     },
+    validDate(date) {
+      return moment(date, 'YYYYMMDD', true).isValid();
+    },
+    dateFormatter(date) {
+      if (this.validDate(date)) {
+        const newDate = moment(date, 'YYYYMMDD').format('YYYY-MM-DD');
+        return new Date(`${newDate}T00:00:00.000Z`);
+      }
+      return '';
+    },
     showRowDetails(item) {
+      // eslint-disable-next-line
       if (!item._showDetails) {
         this.setViewDetails(item.StudyInstanceUID.Value[0], item.flag.view);
+        // eslint-disable-next-line
         item._showDetails = true;
       } else {
+        // eslint-disable-next-line
         item._showDetails = false;
       }
     },
@@ -841,8 +921,11 @@ export default {
         this.$emit('loaddirectories', filesFromInput);
       }
     },
-    changeFilterValue(value) {
-      this.showFilters = value;
+    changeFilterValue() {
+      this.showFilters = !this.showFilters;
+      if (this.showFilters === true && this.isActive === true) {
+        this.scrollTo(this.headerID);
+      }
     },
     setShowIcons(value, studyUID, index = -1) {
       let studyIndex = index;
@@ -851,123 +934,18 @@ export default {
       }
       this.studies[studyIndex].showIcons = value;
     },
+    scrollTo(id) {
+      const target = this.$el.querySelector(`#${id}`);
+      if (target !== null) {
+        const options = {
+          top: target.scrollHeight,
+          left: 0,
+          behavior: 'smooth',
+        };
+        window.scrollTo(options);
+      }
+    },
   },
 };
 
 </script>
-
-<style scoped>
-  select{
-    display: inline !important;
-  }
-  .iconsHover{
-    visibility: visible;
-    display: inline;
-    cursor: pointer;
-  }
-  .iconsUnhover{
-    visibility: hidden;
-    display: inline;
-    cursor: pointer;
-  }
-  .btn-link {
-    font-weight: 400;
-    color: white;
-    background-color: transparent;
-  }
-
-  .btn-link:hover {
-    color: #c7d1db;
-    text-decoration: underline;
-    background-color: transparent;
-    border-color: transparent;
-  }
-
-  .patientNameContainer{
-    position: relative;
-    white-space: nowrap;
-  }
-
-  .patientNameIcons{
-    visibility:hidden;
-    display: inline;
-    cursor: pointer;
-  }
-  @media (max-width:1024px) {
-    .patientNameIcons {
-      visibility: visible;
-      display: inline-block;
-    }
-  }
-  .patientName:hover .patientNameIcons {
-    visibility:visible;
-  }
-
-  .patientNameIcons > span.selected{
-    visibility:visible !important;
-  }
-
-  .patientNameIcons span{
-    margin: 0 3px;
-  }
-
-  .selection-button-container{
-    height: 60px;
-  }
-
-  .td_checkbox {
-    width: auto;
-  }
-
-  input.search-calendar{
-    width: 100px !important;
-  }
-
-  div.wrapper-class{
-    color: #333;
-  }
-
-  div.calendar-class{
-    color: #333;
-  }
-
-  a{
-    cursor: pointer;
-  }
-
-  a.download{
-    color: #FFF;
-  }
-
-  a.download:hover{
-    color: #fd7e14;
-  }
-  .inputfile {
-    width: 0.1px;
-    height: 0.1px;
-    opacity: 0;
-    overflow: hidden;
-    position: absolute;
-    z-index: -1;
-  }
-  .sticky {
-    position: fixed;
-    top: 70px;
-    width: 100%;
-    background: #555;
-    z-index: 5;
-    opacity: 0.95;
-  }
-  .sticky + .content {
-    padding-top: 70px;
-  }
-  .table-wrapper-scroll-y {
-    width: 5px;
-    height: 5px;
-    overflow: scroll;
-    display: block;
-  }
-  .breakword {
-    word-break: break-word;
-  }
-</style>

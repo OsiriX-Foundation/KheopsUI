@@ -36,21 +36,6 @@
 
       <send-studies />
       <!-- footer -->
-      <footer>
-        <b-navbar
-          toggleable="md"
-          type="info"
-          navbar-dark
-          bg-primary
-        >
-          <b-navbar-brand
-            href="#"
-            tag="h4"
-          >
-            © KHEOPS, inc {{ year }}
-          </b-navbar-brand>
-        </b-navbar>
-      </footer>
     </div>
     <sidebar-menu
       :menu="menu"
@@ -98,6 +83,8 @@
         />
       </span>
     </sidebar-menu>
+    <!-- footer -->
+    <footer />
   </div>
 </template>
 
@@ -296,24 +283,7 @@ export default {
 
 <style>
 @import url('https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,600');
-.pointer{
-  cursor:pointer;
-}
-.ban{
-  cursor:not-allowed;
-}
 
-.uppercase{
-  text-transform:uppercase;
-}
-
-a.navbar-brand {
-  color: #CCC;
-  font-size: 11pt;
-}
-body {
-  overflow-y: scroll;
-}
 #app {
   padding-left: 205px;
 }

@@ -1,3 +1,26 @@
+<i18n>
+{
+  "en": {
+    "download": "Download",
+    "osirix": "Open OsiriX",
+    "ohif": "Open OHIF",
+    "weasis": "Open Weasis",
+    "import": "Import data",
+    "comments": "Open comments",
+    "favorite": "Favorite"
+  },
+  "fr": {
+    "download": "Télécharger",
+    "osirix": "Ouvrir OsiriX",
+    "ohif": "Ouvrir OHIF",
+    "weasis": "Ouvrir Weasis",
+    "import": "Importer des données",
+    "comments": "Ouvrir les commentaires",
+    "favorite": "Favori"
+  }
+}
+
+</i18n>
 
 <template>
   <span>
@@ -8,18 +31,18 @@
       <a
         v-if="showDownloadIcon"
         href="#"
-        class="download"
         @click.stop="getURLDownload()"
       >
         <v-icon
-          class="align-middle"
-          style="margin-right:1"
+          class="align-middle icon-margin kheopsicon"
           name="download"
+          :title="$t('download')"
         />
       </a>
       <span
         v-if="OS.match(/(Mac|iPhone|iPod|iPad)/i) && showViewerIcon"
         class="ml-1"
+        :title="$t('osirix')"
         @click.stop="openViewer('Osirix')"
       >
         <osirix-icon
@@ -28,9 +51,21 @@
         />
       </span>
       <span
-        v-if="study.ModalitiesInStudy[0] !== 'SR' && showViewerIcon"
+        v-if="showWeasisIcon"
         class="ml-1"
-        @click.stop="openViewer('Ohif')"
+        :title="$t('weasis')"
+        @click.stop="openViewer('Weasis')"
+      >
+        <weasis-icon
+          width="24"
+          height="24"
+        />
+      </span>
+      <span
+        v-if="showViewerIcon"
+        class="ml-1"
+        :title="$t('ohif')"
+        @click.stop="openViewer('default')"
       >
         <visibility-icon
           width="24px"
@@ -40,13 +75,15 @@
       <label
         v-if="showImportIcon"
         for="file"
-        style="cursor:pointer; display: inline;"
-        class="ml-1"
+        class="ml-1 pointer display-inline"
+        :title="$t('import')"
         @click="setStudyUID()"
       >
-        <add-icon
+        <v-icon
+          name="add"
           width="24px"
           height="24px"
+          class="kheopsicon"
         />
       </label>
       <span
@@ -62,10 +99,10 @@
       @click.stop="showComments(study, 'comments')"
     >
       <v-icon
-        class="align-middle"
-        style="margin-right:1"
+        class="align-middle icon-margin kheopsicon"
         name="comment-dots"
-        :color="study.flag.is_commented ? '' : 'grey'"
+        :class="study.flag.is_commented ? 'bg-neutral fill-neutral' : ''"
+        :title="$t('comments')"
       />
     </span>
     <span
@@ -75,10 +112,10 @@
       @click.stop="toggleFavorite()"
     >
       <v-icon
-        class="align-middle"
-        style="margin-right:1"
+        class="align-middle icon-margin kheopsicon"
         name="star"
-        :color="(!study.flag.is_favorite) ? 'grey' : ''"
+        :class="study.flag.is_favorite ? 'bg-neutral fill-neutral' : ''"
+        :title="$t('favorite')"
       />
     </span>
   </span>
@@ -86,15 +123,18 @@
 <script>
 import Vue from 'vue';
 import OsirixIcon from '@/components/kheopsSVG/OsirixIcon.vue';
+import WeasisIcon from '@/components/kheopsSVG/WeasisIcon.vue';
 import VisibilityIcon from '@/components/kheopsSVG/VisibilityIcon.vue';
-import AddIcon from '@/components/kheopsSVG/AddIcon';
 import { ViewerToken } from '@/mixins/tokens.js';
 import { CurrentUser } from '../../mixins/currentuser.js';
+import { Viewer } from '@/mixins/viewer.js';
 
 export default {
   name: 'ListIcons',
-  components: { OsirixIcon, VisibilityIcon, AddIcon },
-  mixins: [ViewerToken, CurrentUser],
+  components: {
+    OsirixIcon, VisibilityIcon, WeasisIcon,
+  },
+  mixins: [ViewerToken, CurrentUser, Viewer],
   props: {
     study: {
       type: Object,
@@ -141,6 +181,11 @@ export default {
       required: false,
       default: true,
     },
+    showWeasisIcon: {
+      type: Boolean,
+      required: false,
+      default: true,
+    },
     source: {
       type: Object,
       required: true,
@@ -166,6 +211,7 @@ export default {
       return '';
     },
     showIcons() {
+      // eslint-disable-next-line
       return (this.study.flag.is_hover || this.study._showDetails || this.study.showIcons);
     },
   },
@@ -211,7 +257,8 @@ export default {
     getURLDownload() {
       const sourceQuery = this.getSourceQueries();
       const StudyInstanceUID = this.study.StudyInstanceUID.Value[0];
-      this.getViewerToken(this.currentuserAccessToken, StudyInstanceUID, this.source).then((res) => {
+      const token = this.currentuserAccessToken();
+      this.getViewerToken(token, StudyInstanceUID, this.source).then((res) => {
         const queryparams = `accept=application%2Fzip${sourceQuery !== '' ? '&' : ''}${sourceQuery}`;
         const URL = `${process.env.VUE_APP_URL_API}/link/${res.data.access_token}/studies/${StudyInstanceUID}?${queryparams}`;
         location.href = URL;
@@ -222,33 +269,34 @@ export default {
     openViewer(viewer) {
       const StudyInstanceUID = this.study.StudyInstanceUID.Value[0];
       const sourceQuery = this.getSourceQueries();
-      let ohifWindow;
-      if (viewer === 'Ohif') {
-        ohifWindow = window.open('', 'OHIFViewer');
+      const openWindow = {};
+      const openWSI = this.study.ModalitiesInStudy !== undefined
+        && this.study.ModalitiesInStudy.Value.length === 1
+        && this.study.ModalitiesInStudy.Value[0] === 'SM';
+      if (viewer === 'default' && openWSI === false) {
+        openWindow.ohif = window.open('', `OHIFViewer-${StudyInstanceUID}`);
+      } else if (viewer === 'default' && openWSI === true) {
+        openWindow.wsi = window.open('', `WSIViewer-${StudyInstanceUID}`);
       }
-      this.getViewerToken(this.currentuserAccessToken, StudyInstanceUID, this.source).then((res) => {
+      const token = this.currentuserAccessToken();
+      this.getViewerToken(token, StudyInstanceUID, this.source).then((res) => {
+        const viewerToken = res.data.access_token;
+        let url = '';
         if (viewer === 'Osirix') {
-          this.openOsiriX(StudyInstanceUID, res.data.access_token);
-        } else if (viewer === 'Ohif') {
-          ohifWindow.location.href = this.openOhif(StudyInstanceUID, res.data.access_token, sourceQuery);
+          url = this.openOsiriX(StudyInstanceUID, viewerToken);
+          window.open(url, '_self');
+        } else if (viewer === 'default' && openWindow.ohif !== undefined) {
+          url = this.openOhif(StudyInstanceUID, viewerToken, sourceQuery);
+          openWindow.ohif.location.href = url;
+        } else if (viewer === 'default' && openWindow.wsi !== undefined) {
+          openWindow.wsi.location.href = this.openWSI(StudyInstanceUID, viewerToken, sourceQuery);
         } else if (viewer === 'Weasis') {
-          this.openWeasis(StudyInstanceUID, res.data.access_token);
+          url = this.openWeasis(StudyInstanceUID, res.data.access_token);
+          window.open(url, '_self');
         }
       }).catch((err) => {
         console.log(err);
       });
-    },
-    openOsiriX(StudyInstanceUID, token) {
-      const url = `${process.env.VUE_APP_URL_API}/link/${token}/studies/${StudyInstanceUID}?accept=application/zip`;
-      window.open(`osirix://?methodName=downloadURL&URL='${encodeURIComponent(url)}'`, '_self');
-    },
-    openWeasis(StudyInstanceUID, token) {
-      const url = `$dicom:get --zip ${process.env.VUE_APP_URL_API}/link/${token}/studies/${StudyInstanceUID}?accept=application/zip`;
-      window.open(`weasis://?${encodeURIComponent(url)}`, '_self');
-    },
-    openOhif(StudyInstanceUID, token, queryparams) {
-      const url = `${process.env.VUE_APP_URL_API}/studies/${StudyInstanceUID}/ohifmetadata${queryparams !== '' ? '?' : ''}${queryparams}`;
-      return `${process.env.VUE_APP_URL_VIEWER}/?url=${encodeURIComponent(url)}#token=${token}`;
     },
     showComments(study, flagView) {
       const params = {
@@ -259,7 +307,7 @@ export default {
       this.$store.dispatch('setFlagByStudyUID', params);
       this.$store.dispatch('setShowDetails', {
         StudyInstanceUID: study.StudyInstanceUID.Value[0],
-        value: !study._showDetails,
+        value: true,
       });
     },
     setStudyUID() {
@@ -269,25 +317,3 @@ export default {
   },
 };
 </script>
-
-<style scoped>
-  .iconsHover{
-    visibility: visible;
-    display: inline;
-    cursor: pointer;
-    opacity: 1;
-  }
-  .iconsUnhover{
-    visibility: hidden;
-    display: inline;
-    cursor: pointer;
-    opacity: 0;
-  }
-  a.download{
-    color: #FFF;
-  }
-
-  a.download:hover{
-    color: #fd7e14;
-  }
-</style>

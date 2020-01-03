@@ -47,8 +47,7 @@
 <template>
   <div v-if="Object.keys(provider).length > 0">
     <div
-      class="my-3 selection-button-container"
-      style=" position: relative;"
+      class="my-3 provider-position"
     >
       <h4>
         <button
@@ -358,7 +357,6 @@ export default {
           if (res.status !== 204) {
             this.$snotify.error('Sorry, an error occured');
           } else {
-            this.$snotify.success('Provider remove');
             this.$emit('done');
           }
         }).catch((err) => {
@@ -369,8 +367,3 @@ export default {
   },
 };
 </script>
-<style>
-  .breakwork {
-    word-break: break-word;
-  }
-</style>

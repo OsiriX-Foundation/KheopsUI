@@ -71,7 +71,7 @@
           <list
             ref="list"
             :permissions="permissions"
-            :source="source"
+            :album-i-d="albumID"
             @loadfiles="inputLoadFiles"
             @loaddirectories="inputLoadFiles"
           />
@@ -91,22 +91,22 @@ export default {
   name: 'ComponentDragAndDrop',
   components: { ClipLoader, List },
   props: {
-    source: {
-      type: Object,
-      required: false,
-      default: () => ({}),
-    },
     permissions: {
       type: Object,
       required: true,
       default: () => ({}),
+    },
+    albumID: {
+      type: String,
+      required: false,
+      default: undefined,
     },
   },
   data() {
     return {
       dragAndDropCapable: false,
       hover: false,
-      excludeFiles: ['DICOMDIR'],
+      excludeFiles: ['DICOMDIR', '.DS_Store'],
       count: 0,
       counterDraging: 0,
       loading: false,
@@ -117,6 +117,7 @@ export default {
       sending: 'sending',
       files: 'files',
       demoDragAndDrop: 'demoDragAndDrop',
+      source: 'source',
     }),
     canUpload() {
       return this.permissions.add_series;
@@ -186,7 +187,7 @@ export default {
     storeFiles(files) {
       this.$store.dispatch('setSending', { sending: true });
       this.$store.dispatch('setFiles', { files });
-      this.$store.dispatch('setSource', { source: this.source.key === 'inbox' ? this.source.key : this.source.value });
+      this.$store.dispatch('setSourceSending', { source: this.source });
     },
     createObjFiles(file, path, name) {
       if (!this.excludeFileName(name)) {
@@ -283,23 +284,3 @@ export default {
   },
 };
 </script>
-
-<style scoped>
-  .dragenterClass {
-    opacity: 0.5;
-  }
-  .dragenterFormClass {
-    border: 5px dotted green !important;
-  }
-  .dragNotEnterFormClass {
-    border: 5px dotted transparent !important;
-  }
-  .outPopUp {
-    position: fixed;
-    z-index: 15;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size:45px;
-  }
-</style>
