@@ -106,7 +106,7 @@
       :show-album-button="permissions.send_series"
       :show-favorite-button="permissions.add_series && $route.name !== 'viewnologin'"
       :show-delete-button="permissions.delete_series"
-      :show-import-button="permissions.add_series"
+      :show-import-button="permissions.add_series && canUploadFiles"
       :show-inbox-button="permissions.add_inbox"
       :album-id="source.key === 'album' ? source.value : ''"
       @setFilters="changeFilterValue"
@@ -125,7 +125,7 @@
         :show-album-button="permissions.send_series"
         :show-favorite-button="permissions.add_series && $route.name !== 'viewnologin'"
         :show-delete-button="permissions.delete_series"
-        :show-import-button="permissions.add_series"
+        :show-import-button="permissions.add_series && canUploadFiles"
         :show-inbox-button="permissions.add_inbox"
         :album-id="source.key === 'album' ? source.value : ''"
         @setFilters="changeFilterValue"
@@ -370,7 +370,7 @@
                 :show-favorite-icon="permissions.add_series && $route.name !== 'viewnologin'"
                 :show-comment-icon="true"
                 :show-download-icon="permissions.download_series"
-                :show-import-icon="permissions.add_series"
+                :show-import-icon="permissions.add_series && canUploadFiles"
                 :show-report-provider-icon="source.key === 'album' ? true : false"
                 :show-weasis-icon="!mobiledetect"
                 :album-id="source.key === 'album' ? source.value : ''"
@@ -619,6 +619,13 @@ export default {
     },
     providersEnable() {
       return this.providers.filter((provider) => provider.stateURL.checkURL === true);
+    },
+    canUploadFiles() {
+      let canUpload = true;
+      if (process.env.VUE_APP_DISABLE_UPLOAD !== undefined) {
+        canUpload = !process.env.VUE_APP_DISABLE_UPLOAD.includes('true');
+      }
+      return canUpload;
     },
   },
   watch: {
