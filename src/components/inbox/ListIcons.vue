@@ -307,7 +307,7 @@ export default {
           url = this.openOsiriX(StudyInstanceUID, viewerToken);
           window.open(url, '_self');
         } else if (viewer === 'default' && openWindow.ohif !== undefined) {
-          url = this.openOhif(StudyInstanceUID, viewerToken);
+          url = this.openOhif(StudyInstanceUID, null, viewerToken);
           openWindow.ohif.location.href = url;
         } else if (viewer === 'default' && openWindow.wsi !== undefined) {
           openWindow.wsi.location.href = this.openWSI(StudyInstanceUID, viewerToken, sourceQuery);

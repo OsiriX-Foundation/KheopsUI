@@ -25,9 +25,13 @@ export const Viewer = {
 
       return `slicer://viewer${queryparams}`
     },
-    openOhif(StudyInstanceUID, token) {
+    openOhif(StudyInstanceUID, SeriesIntanceUID, token) {
       const url = `${process.env.VUE_APP_URL_API}/link/${token}/ohifservermetadata`;
-      return `${process.env.VUE_APP_URL_VIEWER}/viewer/?url=${encodeURIComponent(url)}&studyInstanceUids=${encodeURIComponent(StudyInstanceUID)}`;
+      if (SeriesIntanceUID == null) {
+        return `${process.env.VUE_APP_URL_VIEWER}/viewer/?url=${encodeURIComponent(url)}&studyInstanceUids=${encodeURIComponent(StudyInstanceUID)}`;
+      } else {
+        return `${process.env.VUE_APP_URL_VIEWER}/viewer/?url=${encodeURIComponent(url)}&studyInstanceUids=${encodeURIComponent(StudyInstanceUID)}&seriesInstanceUids=${encodeURIComponent(SeriesIntanceUID)}`;
+      }
     },
     openWSI(StudyInstanceUID, token) {
       const url = `${process.env.VUE_APP_URL_API}`
