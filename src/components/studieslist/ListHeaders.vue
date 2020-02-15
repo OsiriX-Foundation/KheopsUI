@@ -158,53 +158,46 @@
             <span>{{ $t("delete") }}</span>
           </button>
         </div>
-        <div class="ml-auto" />
         <div
-          v-if="showImportButton === true"
-          class="align-self-center"
+          class="align-self-center ml-auto"
         >
-          <div>
-            <b-dropdown
-              id="dropdown-divider"
-              toggle-class="kheopsicon"
-              variant="link"
-              right
+          <b-dropdown
+            v-if="showImportButton === true"
+            id="dropdown-divider"
+            toggle-class="kheopsicon"
+            variant="link"
+            right
+          >
+            <template slot="button-content">
+              <v-icon
+                name="add"
+                width="34px"
+                height="34px"
+              />
+            </template>
+            <b-dropdown-item-button
+              :disabled="sendingFiles"
             >
-              <template slot="button-content">
-                <v-icon
-                  name="add"
-                  width="34px"
-                  height="34px"
-                />
-              </template>
-              <b-dropdown-item-button
-                :disabled="sendingFiles"
-              >
-                <label for="file">
-                  {{ $t("importfiles") }}
-                </label>
-              </b-dropdown-item-button>
-              <b-dropdown-item-button
-                v-if="determineWebkitDirectory()"
-                :disabled="sendingFiles"
-              >
-                <label for="directory">
-                  {{ $t("importdir") }}
-                </label>
-              </b-dropdown-item-button>
-              <b-dropdown-divider />
-              <b-dropdown-item-button
-                v-if="determineWebkitDirectory()"
-                @click="showDragAndDrop"
-              >
-                {{ $t("draganddrop") }}
-              </b-dropdown-item-button>
-            </b-dropdown>
-          </div>
-        </div>
-        <div
-          class="align-self-center"
-        >
+              <label for="file">
+                {{ $t("importfiles") }}
+              </label>
+            </b-dropdown-item-button>
+            <b-dropdown-item-button
+              v-if="determineWebkitDirectory()"
+              :disabled="sendingFiles"
+            >
+              <label for="directory">
+                {{ $t("importdir") }}
+              </label>
+            </b-dropdown-item-button>
+            <b-dropdown-divider />
+            <b-dropdown-item-button
+              v-if="determineWebkitDirectory()"
+              @click="showDragAndDrop"
+            >
+              {{ $t("draganddrop") }}
+            </b-dropdown-item-button>
+          </b-dropdown>
           <button
             type="button"
             class=" btn btn-link "
@@ -216,10 +209,6 @@
               class="kheopsicon"
             />
           </button>
-        </div>
-        <div
-          class="align-self-center"
-        >
           <button
             type="button"
             class=" btn btn-link"
@@ -251,14 +240,15 @@
 </template>
 
 <script>
-import Vue from 'vue';
 import { mapGetters } from 'vuex';
 import formGetUser from '@/components/user/getUser';
-import ConfirmButton from '@/components/inbox/ConfirmButton.vue';
+import ConfirmButton from '@/components/globals/ConfirmButton.vue';
+import { CurrentUser } from '@/mixins/currentuser.js';
 
 export default {
   name: 'ListHeaders',
   components: { formGetUser, ConfirmButton },
+  mixins: [CurrentUser],
   props: {
     studies: {
       type: Array,
@@ -318,6 +308,7 @@ export default {
     ...mapGetters({
       sendingFiles: 'sending',
       series: 'series',
+      source: 'source',
     }),
     selectedStudiesNb() {
       return _.filter(this.studies, (s) => (s.flag.is_selected === true || s.flag.is_indeterminate === true)).length;
@@ -460,14 +451,21 @@ export default {
       });
     },
     getSource() {
-      if (this.albumId === '') {
+      if (this.source.key !== undefined || this.source.value !== undefined) {
         return {
-          inbox: true,
+          [this.source.key]: this.source.value,
         };
       }
-      return {
-        album: this.albumId,
-      };
+      return {};
+    },
+    getHeaders() {
+      if (this.currentuserCapabilitiesToken !== undefined && this.currentuserKeycloakToken !== undefined) {
+        return {
+          Authorization: `Bearer ${this.currentuserKeycloakToken}`,
+          'X-Authorization-Source': `Bearer ${this.currentuserCapabilitiesToken}`,
+        };
+      }
+      return undefined;
     },
     deleteStudies() {
       this.deleteSelectedStudies();
@@ -516,6 +514,7 @@ export default {
     },
     addToAlbum(albumId) {
       const queries = this.getSource();
+      const headers = this.getHeaders();
       let sendSerie = 0;
       let sendStudy = 0;
       const studySerieData = this.generateStudySerieData(albumId);
@@ -524,7 +523,7 @@ export default {
         404: '',
         unknown: '',
       };
-      this.$store.dispatch('putStudiesInAlbum', { queries, data: studySerieData }).then((res) => {
+      this.$store.dispatch('putStudiesInAlbum', { queries, data: studySerieData, headers }).then((res) => {
         res.forEach((data) => {
           if (data.res !== undefined && data.res.status === 201) {
             if (data.serieId !== undefined) {
@@ -567,6 +566,7 @@ export default {
     },
     addToInbox() {
       const queries = this.getSource();
+      const headers = this.getHeaders();
       const studySerieData = this.generateStudySerieData(this.albumId);
       let sendStudy = 0;
       let sendSerie = 0;
@@ -575,7 +575,7 @@ export default {
         404: '',
         unknown: '',
       };
-      this.$store.dispatch('selfAppropriateStudy', { data: studySerieData, queries }).then((res) => {
+      this.$store.dispatch('selfAppropriateStudy', { data: studySerieData, queries, headers }).then((res) => {
         res.forEach((data) => {
           if (data.res !== undefined && data.res.status === 201) {
             if (data.serieId !== undefined) {
@@ -613,8 +613,6 @@ export default {
       this.$emit('reloadStudies');
     },
     goToCreateAlbum() {
-      this.$router.push({ path: '/albums/new' });
-
       const StudiesUID = [];
       this.selectedStudies.forEach((study) => {
         StudiesUID.push(study.StudyInstanceUID.Value[0]);

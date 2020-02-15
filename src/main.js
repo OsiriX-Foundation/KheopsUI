@@ -17,6 +17,7 @@ import VeeValidate from 'vee-validate';
 import VueKeyCloak from '@dsb-norge/vue-keycloak-js';
 import '@/filters/filters.js';
 import VueI18n from 'vue-i18n';
+import VueScrollTo from 'vue-scrollto';
 import store from './store';
 import Access from '@/directives/access';
 import router from './router';
@@ -39,6 +40,7 @@ Vue.use(VeeValidate, { fieldsBagName: 'formFields' });
 Vue.use(VueI18n);
 Vue.use(lodash);
 Vue.use(ToggleButton);
+Vue.use(VueScrollTo);
 // Vue.use(Vuex)
 Vue.component('v-icon', Icon);
 Vue.directive('access', Access);
@@ -79,6 +81,13 @@ Vue.use(VueKeyCloak, {
       components: { App },
       template: '<App/>',
     });
+  },
+});
+
+// https://fr.vuejs.org/v2/guide/custom-directive.html
+Vue.directive('focus', {
+  inserted(el) {
+    el.focus();
   },
 });
 
@@ -154,5 +163,5 @@ Icon.register({
         fill: 'none',
       },
     ],
-  }
+  },
 });

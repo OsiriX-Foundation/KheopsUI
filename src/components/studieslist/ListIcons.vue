@@ -5,6 +5,7 @@
     "osirix": "Open OsiriX",
     "ohif": "Open OHIF",
     "weasis": "Open Weasis",
+    "slicer": "Open 3D Slicer",
     "import": "Import data",
     "comments": "Open comments",
     "favorite": "Favorite"
@@ -14,6 +15,7 @@
     "osirix": "Ouvrir OsiriX",
     "ohif": "Ouvrir OHIF",
     "weasis": "Ouvrir Weasis",
+    "slicer": "Ouvrir 3D Slicer",
     "import": "Importer des données",
     "comments": "Ouvrir les commentaires",
     "favorite": "Favori"
@@ -57,6 +59,17 @@
         @click.stop="openViewer('Weasis')"
       >
         <weasis-icon
+          width="24"
+          height="24"
+        />
+      </span>
+      <span
+        v-if="showSlicerIcon"
+        class="ml-1"
+        :title="$t('slicer')"
+        @click.stop="openViewer('Slicer')"
+      >
+        <slicer-icon
           width="24"
           height="24"
         />
@@ -123,6 +136,7 @@
 <script>
 import Vue from 'vue';
 import OsirixIcon from '@/components/kheopsSVG/OsirixIcon.vue';
+import SlicerIcon from '@/components/kheopsSVG/SlicerIcon.vue';
 import WeasisIcon from '@/components/kheopsSVG/WeasisIcon.vue';
 import VisibilityIcon from '@/components/kheopsSVG/VisibilityIcon.vue';
 import { ViewerToken } from '@/mixins/tokens.js';
@@ -132,7 +146,7 @@ import { Viewer } from '@/mixins/viewer.js';
 export default {
   name: 'ListIcons',
   components: {
-    OsirixIcon, VisibilityIcon, WeasisIcon,
+    OsirixIcon, VisibilityIcon, WeasisIcon, SlicerIcon,
   },
   mixins: [ViewerToken, CurrentUser, Viewer],
   props: {
@@ -186,6 +200,11 @@ export default {
       required: false,
       default: true,
     },
+    showSlicerIcon: {
+      type: Boolean,
+      required: false,
+      default: true,
+    },
     source: {
       type: Object,
       required: true,
@@ -211,6 +230,7 @@ export default {
       return '';
     },
     showIcons() {
+      // eslint-disable-next-line
       return (this.study.flag.is_hover || this.study._showDetails || this.study.showIcons);
     },
   },
@@ -256,7 +276,8 @@ export default {
     getURLDownload() {
       const sourceQuery = this.getSourceQueries();
       const StudyInstanceUID = this.study.StudyInstanceUID.Value[0];
-      this.getViewerToken(this.currentuserAccessToken, StudyInstanceUID, this.source).then((res) => {
+      const token = this.currentuserAccessToken();
+      this.getViewerToken(token, StudyInstanceUID, this.source).then((res) => {
         const queryparams = `accept=application%2Fzip${sourceQuery !== '' ? '&' : ''}${sourceQuery}`;
         const URL = `${process.env.VUE_APP_URL_API}/link/${res.data.access_token}/studies/${StudyInstanceUID}?${queryparams}`;
         location.href = URL;
@@ -267,33 +288,51 @@ export default {
     openViewer(viewer) {
       const StudyInstanceUID = this.study.StudyInstanceUID.Value[0];
       const sourceQuery = this.getSourceQueries();
-      const openWindow = {};
-      const openWSI = this.study.ModalitiesInStudy !== undefined
-        && this.study.ModalitiesInStudy.Value.length === 1
-        && this.study.ModalitiesInStudy.Value[0] === 'SM';
-      if (viewer === 'default' && openWSI === false) {
-        openWindow.ohif = window.open('', `OHIFViewer-${StudyInstanceUID}`);
-      } else if (viewer === 'default' && openWSI === true) {
-        openWindow.wsi = window.open('', `WSIViewer-${StudyInstanceUID}`);
-      }
-      this.getViewerToken(this.currentuserAccessToken, StudyInstanceUID, this.source).then((res) => {
+      const openWindow = this.setWindowsProps(viewer, StudyInstanceUID);
+      const token = this.currentuserAccessToken();
+
+      this.getViewerToken(token, StudyInstanceUID, this.source).then((res) => {
         const viewerToken = res.data.access_token;
         let url = '';
         if (viewer === 'Osirix') {
           url = this.openOsiriX(StudyInstanceUID, viewerToken);
           window.open(url, '_self');
+        } else if (viewer === 'Weasis') {
+          url = this.openWeasis(StudyInstanceUID, viewerToken);
+          window.open(url, '_self');
+        } else if (viewer === 'Slicer') {
+          url = this.openSlicer(StudyInstanceUID, viewerToken);
+          window.open(url, '_self');
         } else if (viewer === 'default' && openWindow.ohif !== undefined) {
-          url = this.openOhif(StudyInstanceUID, viewerToken, sourceQuery);
+          const queryparams = {
+            url: `${process.env.VUE_APP_URL_API}/link/${viewerToken}/ohifservermetadata`,
+            studyInstanceUids: StudyInstanceUID,
+          };
+          url = this.openOhif(queryparams);
           openWindow.ohif.location.href = url;
         } else if (viewer === 'default' && openWindow.wsi !== undefined) {
           openWindow.wsi.location.href = this.openWSI(StudyInstanceUID, viewerToken, sourceQuery);
-        } else if (viewer === 'Weasis') {
-          url = this.openWeasis(StudyInstanceUID, res.data.access_token);
-          window.open(url, '_self');
         }
       }).catch((err) => {
         console.log(err);
       });
+    },
+    setWindowsProps(viewer, StudyInstanceUID) {
+      const openWSI = this.mustOpenWSI();
+      const openWindow = {};
+      if (viewer === 'default' && openWSI === false) {
+        openWindow.ohif = window.open('', `OHIFViewer-${StudyInstanceUID}`);
+      } else if (viewer === 'default' && openWSI === true) {
+        openWindow.wsi = window.open('', `WSIViewer-${StudyInstanceUID}`);
+      }
+      return openWindow;
+    },
+    mustOpenWSI() {
+      return (this.study.ModalitiesInStudy !== undefined
+        && this.study.ModalitiesInStudy.Value.length === 1
+        && this.study.ModalitiesInStudy.Value[0] === 'SM'
+        && process.env.VUE_APP_URL_VIEWER_SM !== undefined
+        && process.env.VUE_APP_URL_VIEWER_SM.length > 0);
     },
     showComments(study, flagView) {
       const params = {
@@ -304,7 +343,7 @@ export default {
       this.$store.dispatch('setFlagByStudyUID', params);
       this.$store.dispatch('setShowDetails', {
         StudyInstanceUID: study.StudyInstanceUID.Value[0],
-        value: !study._showDetails,
+        value: true,
       });
     },
     setStudyUID() {

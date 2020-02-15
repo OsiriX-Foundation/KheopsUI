@@ -1,4 +1,3 @@
-/* eslint-disable */
 <i18n>
 {
   "en":{
@@ -40,6 +39,7 @@
               <div>
                 <input
                   v-model="edit.name"
+                  v-focus
                   type="text"
                   class="form-control"
                   maxlength="255"
@@ -94,6 +94,7 @@
               <div>
                 <textarea
                   v-model="edit.description"
+                  v-focus
                   rows="5"
                   class="form-control no-resize"
                   maxlength="2048"
@@ -132,7 +133,7 @@
 
 <script>
 import { mapGetters } from 'vuex';
-import AlbumButtons from '@/components/albums/AlbumButtons';
+import AlbumButtons from '@/components/albumsettings/AlbumButtons';
 
 export default {
   name: 'AlbumSettingsGeneral',

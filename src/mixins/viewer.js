@@ -1,4 +1,5 @@
 /* eslint-disable */
+import httpoperations from '@/mixins/httpoperations';
 
 export const Viewer = {
   data() {
@@ -14,9 +15,19 @@ export const Viewer = {
       const url = `$dicom:rs --url="${process.env.VUE_APP_URL_API}" --request="studyUID=${StudyInstanceUID}" --header="Authorization: Bearer ${token}"`;
       return `weasis://?${encodeURIComponent(url)}`;
     },
-    openOhif(StudyInstanceUID, token, queryparams) {
-      const url = `${process.env.VUE_APP_URL_API}/link/${token}/studies/${StudyInstanceUID}/ohifmetadata${queryparams !== '' ? '?' : ''}${queryparams}`;
-      return `${process.env.VUE_APP_URL_VIEWER}/viewer/?url=${encodeURIComponent(url)}`;
+    openSlicer(StudyInstanceUID, token) {
+      const queryparams = httpoperations.getQueriesParameters({
+        studyUID: StudyInstanceUID,
+        access_token: token,
+        dicomweb_endpoint: process.env.VUE_APP_URL_API,
+        dicomweb_uri_endpoint: `${process.env.VUE_APP_URL_API}/wado`,
+      });
+
+      return `slicer://viewer${queryparams}`
+    },
+    openOhif(queryparams) {
+      const queryparamsString = httpoperations.getQueriesParameters(queryparams);
+      return `${process.env.VUE_APP_URL_VIEWER}/viewer${queryparamsString}`;
     },
     openWSI(StudyInstanceUID, token) {
       const url = `${process.env.VUE_APP_URL_API}`
@@ -25,6 +36,6 @@ export const Viewer = {
     },
     openWADO(StudyInstanceUID, token, queryparams) {
       return `${process.env.VUE_APP_URL_API}/link/${token}/wado${queryparams}`
-    }
+    },
   },
 };

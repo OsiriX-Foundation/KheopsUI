@@ -17,7 +17,11 @@
     "noresults": "No album found",
     "albumshared": "Album shared",
     "error": "An error occur please reload the albums.",
-    "reload": "Reload"
+    "reload": "Reload",
+    "filter": "Filter",
+    "fromDate": "From",
+    "toDate": "To",
+    "nopermissions": "You don't have the permissions to show the albums list."
   },
   "fr": {
     "newalbum": "Nouvel album",
@@ -36,7 +40,11 @@
     "noresults": "Aucun album trouvé",
     "albumshared": "Album partagé",
     "error": "Une erreur s'est produite, veuillez recharger les albums.",
-    "reload": "Recharger"
+    "reload": "Recharger",
+    "filter": "Filtrer",
+    "fromDate": "De",
+    "toDate": "A",
+    "nopermissions": "Vous n'avez pas les autorisations pour afficher la liste des albums."
   }
 }
 </i18n>
@@ -70,8 +78,7 @@
       @row-unhovered="setItemUnhover"
     >
       <template
-        slot="HEAD_name"
-        slot-scope="data"
+        v-slot:head(name)="data"
       >
         <div
           v-if="showFilters"
@@ -79,6 +86,7 @@
         >
           <input
             v-model="filters.name"
+            v-focus
             type="search"
             class="form-control form-control-sm"
             :placeholder="$t('filter')"
@@ -92,8 +100,7 @@
         {{ data.label }}
       </template>
       <template
-        slot="HEAD_number_of_studies"
-        slot-scope="data"
+        v-slot:head(number_of_studies)="data"
       >
         <sort-list
           :sort-desc="albumsParams.sortDesc"
@@ -103,8 +110,7 @@
         {{ data.label }}
       </template>
       <template
-        slot="HEAD_number_of_users"
-        slot-scope="data"
+        v-slot:head(number_of_users)="data"
       >
         <sort-list
           :sort-desc="albumsParams.sortDesc"
@@ -114,8 +120,7 @@
         {{ data.label }}
       </template>
       <template
-        slot="HEAD_number_of_comments"
-        slot-scope="data"
+        v-slot:head(number_of_comments)="data"
       >
         <sort-list
           :sort-desc="albumsParams.sortDesc"
@@ -125,8 +130,7 @@
         {{ data.label }}
       </template>
       <template
-        slot="HEAD_created_time"
-        slot-scope="data"
+        v-slot:head(created_time)="data"
       >
         <div
           v-if="showFilters"
@@ -165,8 +169,7 @@
         {{ data.label }}
       </template>
       <template
-        slot="HEAD_last_event_time"
-        slot-scope="data"
+        v-slot:head(last_event_time)="data"
       >
         <div
           v-if="showFilters"
@@ -206,8 +209,7 @@
         {{ data.label }}
       </template>
       <template
-        slot="is_selected"
-        slot-scope="row"
+        v-slot:cell(is_selected)="row"
       >
         <b-button-group>
           <b-form-checkbox
@@ -219,8 +221,7 @@
         </b-button-group>
       </template>
       <template
-        slot="name"
-        slot-scope="row"
+        v-slot:cell(name)="row"
       >
         <div
           :class="'d-flex flex-wrap'"
@@ -242,14 +243,12 @@
         </div>
       </template>
       <template
-        slot="created_time"
-        slot-scope="data"
+        v-slot:cell(created_time)="data"
       >
         {{ data.item.created_time | formatDate }}
       </template>
       <template
-        slot="last_event_time"
-        slot-scope="data"
+        v-slot:cell(last_event_time)="data"
       >
         {{ data.item.last_event_time | formatDate }}
       </template>
@@ -270,14 +269,23 @@
         {{ $t('noresults') }}
       </div>
       <div slot="error">
-        {{ $t('error') }}<br>
-        <button
-          type="button"
-          class=" btn btn-md"
-          @click="searchAlbums()"
+        <span
+          v-if="statusList === 401 || statusList === 403"
         >
-          {{ $t('reload') }}
-        </button>
+          {{ $t('nopermissions') }}
+        </span>
+        <span
+          v-else
+        >
+          {{ $t('error') }}<br><br>
+          <button
+            type="button"
+            class=" btn btn-md"
+            @click="searchAlbums()"
+          >
+            {{ $t('reload') }}
+          </button>
+        </span>
       </div>
     </infinite-loading>
   </div>
@@ -291,7 +299,7 @@ import moment from 'moment';
 import PulseLoader from 'vue-spinner/src/PulseLoader.vue';
 import formGetUser from '@/components/user/getUser';
 import ListAlbumsHeaders from '@/components/albums/ListAlbumsHeaders';
-import SortList from '@/components/inbox/SortList.vue';
+import SortList from '@/components/globals/SortList.vue';
 import mobiledetect from '@/mixins/mobiledetect.js';
 
 export default {
@@ -301,6 +309,7 @@ export default {
   },
   data() {
     return {
+      statusList: 200,
       form_send_album: false,
       showFilters: false,
       infiniteId: 0,
@@ -484,6 +493,9 @@ export default {
     },
     infiniteHandler($state) {
       this.getAlbums(this.albumsParams.offset, this.albumsParams.limit).then((res) => {
+        if (res.status !== undefined) {
+          this.statusList = res.status;
+        }
         if (this.albums.length === parseInt(res.headers['x-total-count'], 10)) {
           $state.complete();
         }
@@ -494,6 +506,9 @@ export default {
           $state.complete();
         }
       }).catch((err) => {
+        if (err.response !== undefined && err.response.status !== undefined) {
+          this.statusList = err.response.status;
+        }
         $state.error();
         return err;
       });
