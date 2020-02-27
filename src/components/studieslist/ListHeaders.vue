@@ -231,11 +231,19 @@
       :method-confirm="() => confirmDelete=false"
       :method-cancel="deleteStudies"
     />
-    <form-get-user
+    <div
       v-if="formSendStudy && selectedStudiesNb"
-      @get-user="sendToUser"
-      @cancel-user="formSendStudy=false"
-    />
+      class="card"
+    >
+      <div class="card-body">
+        <form-get-user
+          class-col-left="col-12 col-sm-6 col-md-5 col-lg-3 col-xl-3"
+          class-col-right="col-12 col-sm-6 col-md-7 col-lg-9"
+          @get-user="sendToUser"
+          @cancel-user="formSendStudy=false"
+        />
+      </div>
+    </div>
   </div>
 </template>
 

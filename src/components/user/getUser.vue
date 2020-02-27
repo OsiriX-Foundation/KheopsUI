@@ -16,41 +16,39 @@
 </i18n>
 
 <template>
-  <div class="card">
-    <div class="card-body">
-      <form @submit.prevent="getUser">
-        <div class="row">
-          <div class="col-12 col-sm-6 col-md-5 col-lg-3 col-xl-3">
-            <v-select
-              v-model="new_user_name"
-              v-focus
-              class="style-chooser"
-              :options="userFind"
-              @search="searchUser"
-            />
-          </div>
-          <div class="col-12 col-sm-6 col-md-7 col-lg-9">
-            <button
-              class="btn btn-primary"
-              type="submit"
-              :disabled="!validEmail(new_user_name)"
-            >
-              {{ $t('send') }}
-            </button>
-            <button
-              class="btn btn-secondary"
-              type="reset"
-              tabindex="0"
-              @keyup.esc="new_user_name=''"
-              @click="cancel"
-            >
-              {{ $t('cancel') }}
-            </button>
-          </div>
-        </div>
-      </form>
+  <form @submit.prevent="getUser">
+    <div class="row">
+      <div :class="classColLeft">
+        <v-select
+          v-model="new_user_name"
+          v-focus
+          class="style-chooser"
+          :options="userFind"
+          @search="searchUser"
+        />
+      </div>
+      <div :class="classColRight">
+        <slot>
+          <button
+            class="btn btn-primary"
+            type="submit"
+            :disabled="!validEmail(new_user_name)"
+          >
+            {{ $t('send') }}
+          </button>
+          <button
+            class="btn btn-secondary"
+            type="reset"
+            tabindex="0"
+            @keyup.esc="new_user_name=''"
+            @click="cancel"
+          >
+            {{ $t('cancel') }}
+          </button>
+        </slot>
+      </div>
     </div>
-  </div>
+  </form>
 </template>
 
 <script>
@@ -62,6 +60,18 @@ export default {
   name: 'FormGetUser',
   components: { vSelect },
   mixins: [CurrentUser],
+  props: {
+    classColLeft: {
+      type: String,
+      required: false,
+      default: '',
+    },
+    classColRight: {
+      type: String,
+      required: false,
+      default: '',
+    },
+  },
   data() {
     return {
       new_user_name: '',
