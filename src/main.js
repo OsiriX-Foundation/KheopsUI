@@ -18,6 +18,7 @@ import VueKeyCloak from '@dsb-norge/vue-keycloak-js';
 import '@/filters/filters.js';
 import VueI18n from 'vue-i18n';
 import VueScrollTo from 'vue-scrollto';
+import 'vue-select/dist/vue-select.css';
 import store from './store';
 import Access from '@/directives/access';
 import router from './router';

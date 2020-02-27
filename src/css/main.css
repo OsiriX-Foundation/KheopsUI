@@ -477,3 +477,16 @@ label.token-props{
 	text-transform: capitalize;
 	margin-left: 1em;
 }
+
+.style-chooser .vs__dropdown-toggle,
+.style-chooser .vs__search::placeholder,
+.style-chooser .vs__dropdown-menu {
+  background: #ffffff;
+  border: none;
+  color: #003866;
+}
+
+.style-chooser .vs__clear,
+.style-chooser .vs__open-indicator {
+  fill: #003866;
+}
