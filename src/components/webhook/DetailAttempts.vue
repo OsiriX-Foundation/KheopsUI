@@ -138,6 +138,7 @@ export default {
     },
   },
   created() {
+    console.log(this.trigger);
   },
   beforeDestroy() {
   },

@@ -182,6 +182,7 @@ export default {
       return false;
     },
     showRowDetails(item) {
+      console.log(item);
       // eslint-disable-next-line
       this.$set(item, '_showDetails', !item._showDetails);
     },
